@@ -7,7 +7,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
 PROJECT(physamp CXX)
 
 # Compile options
-SET (CMAKE_CXX_FLAGS "-std=c++14 -Wall -Weffc++ -Wshadow -Wconversion")
+add_compile_options(-std=c++14 -Wall -Weffc++ -Wshadow -Wconversion)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE RelWithDebInfo CACHE STRING
