@@ -12,6 +12,6 @@ SET_TARGET_PROPERTIES(bppalnoptim PROPERTIES LINK_SEARCH_END_STATIC ${BUILD_STAT
 
 # Install progs
 INSTALL(TARGETS
-  bppphysamp
+  #bppphysamp
   bppalnoptim
   DESTINATION bin)

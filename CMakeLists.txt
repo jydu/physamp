@@ -66,34 +66,14 @@ IF(MAN)
     MESSAGE("-- Found nroff here: ${NROFF_EXE}")
     MESSAGE("   Adding targets: man")
 
-    ADD_CUSTOM_TARGET(man
-      ALL
-      COMMAND cp bppml.1.txt bppml.1
-      COMMAND ${DOC_COMPRESS} -f bppml.1
-      COMMAND cp bppseqgen.1.txt bppseqgen.1
-      COMMAND ${DOC_COMPRESS} -f bppseqgen.1
-      COMMAND cp bppdist.1.txt bppdist.1
-      COMMAND ${DOC_COMPRESS} -f bppdist.1
-      COMMAND cp bpppars.1.txt bpppars.1
-      COMMAND ${DOC_COMPRESS} -f bpppars.1
-      COMMAND cp bppseqman.1.txt bppseqman.1
-      COMMAND ${DOC_COMPRESS} -f bppseqman.1
-      COMMAND cp bppconsense.1.txt bppconsense.1
-      COMMAND ${DOC_COMPRESS} -f bppconsense.1
-      COMMAND cp bppancestor.1.txt bppancestor.1
-      COMMAND ${DOC_COMPRESS} -f bppancestor.1
-      COMMAND cp bppreroot.1.txt bppreroot.1
-      COMMAND ${DOC_COMPRESS} -f bppreroot.1
-      COMMAND cp bppphysamp.1.txt bppphysamp.1
-      COMMAND ${DOC_COMPRESS} -f bppphysamp.1
-      COMMAND cp bpptreedraw.1.txt bpptreedraw.1
-      COMMAND ${DOC_COMPRESS} -f bpptreedraw.1
-      COMMAND cp bppalnscore.1.txt bppalnscore.1
-      COMMAND ${DOC_COMPRESS} -f bppalnscore.1
-      COMMAND cp bppmixedlikelihoods.1.txt bppmixedlikelihoods.1
-      COMMAND ${DOC_COMPRESS} -f bppmixedlikelihoods.1
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/man
-      )
+    #    ADD_CUSTOM_TARGET(man
+    #      ALL
+      #      COMMAND cp bppphysamp.1.txt bppphysamp.1
+      #      COMMAND ${DOC_COMPRESS} -f bppphysamp.1
+      #      COMMAND cp bppalnoptim.1.txt bppalnoptim.1
+      #      COMMAND ${DOC_COMPRESS} -f bppalnoptim.1
+      #      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/man
+      #      )
     SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "man/bppml.1.${DOC_COMPRESS_EXT};man/bppseqgen.1.${DOC_COMPRESS_EXT};man/bppdist.1.${DOC_COMPRESS_EXT};man/bpppars.1.${DOC_COMPRESS_EXT};man/bppseqman.1.${DOC_COMPRESS_EXT};man/bppconsense.1.${DOC_COMPRESS_EXT};man/bppancestor.1.${DOC_COMPRESS_EXT};man/bppreroot.1.${DOC_COMPRESS_EXT};man/bppphysamp.1.${DOC_COMPRESS_EXT};man/bpptreedraw.1.${DOC_COMPRESS_EXT};man/bppalnscore.1.${DOC_COMPRESS_EXT};man/bppmixedlikelihoods.1.${DOC_COMPRESS_EXT}")
 
   ELSE()
@@ -110,11 +90,11 @@ IF(INFO)
     SET(ADD_INFO_TO "ALL")
     MESSAGE("   Adding target info to target all")
     
-    ADD_CUSTOM_TARGET(info
-      ${ADD_INFO_TO}
-      COMMAND ${MAKEINFO_EXE} physamp.texi
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/doc
-      )
+    #    ADD_CUSTOM_TARGET(info
+    #      ${ADD_INFO_TO}
+    #      COMMAND ${MAKEINFO_EXE} physamp.texi
+    #      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/doc
+    #      )
 
     ADD_CUSTOM_TARGET(html
       COMMAND ${MAKEINFO_EXE} --html --css-ref=http://www.w3.org/StyleSheets/Core/Steely physamp.texi
