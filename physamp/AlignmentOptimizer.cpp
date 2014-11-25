@@ -59,6 +59,7 @@ using namespace std;
 
 // From bpp-phyl:
 #include <Bpp/Phyl/TreeTemplate.h>
+#include <Bpp/Phyl/Distance/HierarchicalClustering.h>
 #include <Bpp/Phyl/App/PhylogeneticsApplicationTools.h>
 
 using namespace bpp;
@@ -71,6 +72,19 @@ void help()
   (*ApplicationTools::message).endLine();
   (*ApplicationTools::message << "  Refer to the Bio++ Program Suite Manual for a list of available options.").endLine();
   (*ApplicationTools::message << "__________________________________________________________________________").endLine();
+}
+
+double overlapDistance(const Sequence& seq1, const Sequence& seq2) {
+  //double n1 = 0, n2 = 0, n12 = 0;
+  double n12 = 0;
+  const Alphabet* a = seq1.getAlphabet();
+  for (size_t i = 0; i < seq1.size(); ++i) {
+    //if (!a->isGap(seq1[i])) n1++;
+    //if (!a->isGap(seq2[i])) n2++;
+    if (!a->isGap(seq1[i]) && !a->isGap(seq2[i])) n12++;
+  }
+  //return (1. - 2. * n12 / (n1 + n2)); 
+  return (static_cast<double>(seq1.size()) - n12);
 }
 
 struct Group {
@@ -104,6 +118,7 @@ class AlignmentPartitionScores {
 
   public:
     AlignmentPartitionScores():
+      id(-1),
       nbSitesUp(0),
       nbSitesDown(0),
       nbSequencesUp(0),
@@ -111,6 +126,8 @@ class AlignmentPartitionScores {
       nbCharsUp(0),
       nbCharsDown(0)
     {}
+    
+    virtual ~AlignmentPartitionScores() {}
 
   public:
     Group getGroupUp() const {
@@ -133,6 +150,7 @@ class AlignmentPartitionScores1:
   public:
     AlignmentPartitionScores1():
       up(), down() {}
+    virtual ~AlignmentPartitionScores1() {}
 };
 
 //Version allowing a certain amount of gaps:
@@ -146,6 +164,7 @@ class AlignmentPartitionScores2:
   public:
     AlignmentPartitionScores2():
       up(), down() {}
+    virtual ~AlignmentPartitionScores2() {}
 };
 
 class Comparator {
@@ -186,96 +205,12 @@ class Comparator {
 };
 
 
-// Recursive function.
-// This will initialize the scores map and set the down variables.
-// For convenience, we return the scores for the root subtree.
-AlignmentPartitionScores1& gapOptimizerFirstTreeTraversal1(const Node& node, const SiteContainer& sites, map<int, AlignmentPartitionScores1>& scores)
-{
-  AlignmentPartitionScores1& nodeScores = scores[node.getId()]; //This creates scores for this node.
-  size_t nbSites = sites.getNumberOfSites();
-  nodeScores.id = node.getId();
-  nodeScores.up.assign(nbSites, true);
-  nodeScores.down.assign(nbSites, true);
-  
-  //We distinguish two cases, whether the node is a leaf or an inner node:
-  if (node.isLeaf()) {
-    //This is a leaf, we initialize arrays from the sequence data.
-    const Sequence& seq = sites.getSequence(node.getName()); //We assume that the alignment contains all leaves of the tree.
-    //This one at least is trivial:
-    nodeScores.nbSequencesDown = 1;
-    //Now we need to initialize the bit vector and count sites:
-    for (size_t i = 0; i < nbSites; ++i) {
-      bool test = !seq.getAlphabet()->isGap(seq[i]);
-      nodeScores.down[i] = test; //NB: we need to adapt in case we also want to ignore generic characters.
-      if (test) nodeScores.nbSitesDown++;
-    }
-  } else {
-    //This is an inner node.
-    //All calculations are performed recursively from the results of son nodes:
-    for (size_t k = 0; k < node.getNumberOfSons(); ++k) {
-      //We loop over all son nodes:
-      const Node* son = node.getSon(k);
-      //We need to make computations for the subtree first and get the results:
-      AlignmentPartitionScores1& sonScores = gapOptimizerFirstTreeTraversal1(*son, sites, scores);
-      //Now we make computations for this node:
-      nodeScores.nbSequencesDown += sonScores.nbSequencesDown;
-      for (size_t i = 0; i < nbSites; ++i)
-        nodeScores.down[i] = nodeScores.down[i] && sonScores.down[i];
-    }
-    //Finally we count all sites:
-    for (size_t i = 0; i < nbSites; ++i)
-      if (nodeScores.down[i]) nodeScores.nbSitesDown++;
-    nodeScores.nbCharsDown = nodeScores.nbSequencesDown * nodeScores.nbSitesDown;
-  }
-  return nodeScores;
-}
-
-// Recursive function.
-// This will initialize the scores map and set the up variables.
-// This must be ran after the first tree traversal, so that all scores are already initialized.
-void gapOptimizerSecondTreeTraversal1(const Node& node, const SiteContainer& sites, map<int, AlignmentPartitionScores1>& scores)
-{
-  AlignmentPartitionScores1& nodeScores = scores[node.getId()]; //This was created during the first pass.
-  size_t nbSites = sites.getNumberOfSites();
-  if (node.hasFather()) {
-    const Node* father = node.getFather();
-    //If the node is root, there is nothing to do here...
-    AlignmentPartitionScores1& fatherScores = scores[father->getId()];
-    //We initialize the up array to the one of it father:
-    nodeScores.up = fatherScores.up;
-    nodeScores.nbSequencesUp = fatherScores.nbSequencesUp;
-    //No we check all uncle nodes:
-    for (size_t k = 0; k < father->getNumberOfSons(); ++k) {
-      const Node* uncle = father->getSon(k);
-      if (uncle != &node) {
-        AlignmentPartitionScores1& uncleScores = scores[uncle->getId()];
-        nodeScores.nbSequencesUp += uncleScores.nbSequencesDown;
-        for (size_t i = 0; i < nbSites; ++i) {
-          nodeScores.up[i] = nodeScores.up[i] && uncleScores.down[i];
-        }
-      }
-    }
-  } else {
-    //This is the root node, the up vector equals the down one:
-    nodeScores.up = nodeScores.down;
-  }
-  //Finally we count all sites:
-  for (size_t i = 0; i < nbSites; ++i)
-    if (nodeScores.up[i]) nodeScores.nbSitesUp++;
-  nodeScores.nbCharsUp = nodeScores.nbSequencesUp * nodeScores.nbSitesUp;
-
-  // Recursive call on son nodes (this does not do anything for leaves):
-  for (size_t k = 0; k < node.getNumberOfSons(); ++k) {
-    gapOptimizerSecondTreeTraversal1(*node.getSon(k), sites, scores);
-  }
-}
-
 #define Index2 map<int, AlignmentPartitionScores2>
 
 // Recursive function.
 // This will initialize the scores map and set the down variables.
 // For convenience, we return the scores for the root subtree.
-AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterUnresolved)
+AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   AlignmentPartitionScores2& nodeScores = scores[node.getId()]; //This eventually creates scores for this node.
   size_t nbSites = sites.getNumberOfSites();
@@ -295,8 +230,7 @@ AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, con
       bool test = !seq.getAlphabet()->isGap(seq[i]);
       if (filterUnresolved)
         test = test & !seq.getAlphabet()->isUnresolved(seq[i]);
-      nodeScores.down[i] = (test ? 1 : 0); //NB: we need to adapt in case we also want to ignore generic characters.
-      if (test) nodeScores.nbSitesDown++;
+      nodeScores.down[i] += (test ? 1 : 0);
     }
   } else {
     //This is an inner node.
@@ -306,18 +240,18 @@ AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, con
       //We loop over all son nodes:
       const Node* son = node.getSon(k);
       //We need to make computations for the subtree first and get the results:
-      AlignmentPartitionScores2& sonScores = gapOptimizerFirstTreeTraversal2(*son, sites, scores, threshold, filterUnresolved);
+      AlignmentPartitionScores2& sonScores = gapOptimizerFirstTreeTraversal2(*son, sites, scores, threshold, filterUnresolved, reference, nbSequencesRef);
       //Now we make computations for this node:
       nodeScores.nbSequencesDown += sonScores.nbSequencesDown;
       for (size_t i = 0; i < nbSites; ++i)
         nodeScores.down[i] += sonScores.down[i];
     }
-    //Finally we count all sites:
-    for (size_t i = 0; i < nbSites; ++i) {
-      if (static_cast<double>(nodeScores.down[i]) / static_cast<double>(nodeScores.nbSequencesDown) >= threshold) {
-        nodeScores.nbSitesDown++;
-        nodeScores.nbCharsDown += nodeScores.down[i];
-      }
+  }
+  //Finally we count all sites:
+  for (size_t i = 0; i < nbSites; ++i) {
+    if (static_cast<double>(nodeScores.down[i] + reference[i]) / static_cast<double>(nodeScores.nbSequencesDown + nbSequencesRef) >= threshold) {
+      nodeScores.nbSitesDown++;
+      nodeScores.nbCharsDown += nodeScores.down[i];
     }
   }
   return nodeScores;
@@ -326,7 +260,7 @@ AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, con
 // Recursive function.
 // This will initialize the scores map and set the up variables.
 // This must be ran after the first tree traversal, so that all scores are already initialized.
-void gapOptimizerSecondTreeTraversal2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold)
+void gapOptimizerSecondTreeTraversal2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   AlignmentPartitionScores2& nodeScores = scores[node.getId()]; //This was created during the first pass.
   size_t nbSites = sites.getNumberOfSites();
@@ -356,7 +290,7 @@ void gapOptimizerSecondTreeTraversal2(const Node& node, const SiteContainer& sit
   }
   //Finally we count all sites:
   for (size_t i = 0; i < nbSites; ++i) {
-    if (static_cast<double>(nodeScores.up[i]) / static_cast<double>(nodeScores.nbSequencesUp) >= threshold) {
+    if (static_cast<double>(nodeScores.up[i] + reference[i]) / static_cast<double>(nodeScores.nbSequencesUp + nbSequencesRef) >= threshold) {
       nodeScores.nbSitesUp++;
       nodeScores.nbCharsUp += nodeScores.up[i];
     }
@@ -364,12 +298,12 @@ void gapOptimizerSecondTreeTraversal2(const Node& node, const SiteContainer& sit
 
   // Recursive call on son nodes (this does not do anything for leaves):
   for (size_t k = 0; k < node.getNumberOfSons(); ++k) {
-    gapOptimizerSecondTreeTraversal2(*node.getSon(k), sites, scores, threshold);
+    gapOptimizerSecondTreeTraversal2(*node.getSon(k), sites, scores, threshold, reference, nbSequencesRef);
   }
 }
 
 // Update function.
-void gapOptimizerUpstreamUpdate2(const Node& node, const Node* from, const SiteContainer& sites, Index2& scores, double threshold)
+void gapOptimizerUpstreamUpdate2(const Node& node, const Node* from, const SiteContainer& sites, Index2& scores, double threshold, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   if (!node.isLeaf()) {
     size_t nbSites = sites.getNumberOfSites();
@@ -389,19 +323,68 @@ void gapOptimizerUpstreamUpdate2(const Node& node, const Node* from, const SiteC
         nodeScores.down[i] += sonScores.down[i];
       if (from && son->getId() != from->getId()) {
         //Now we update all up nodes in uncle nodes:
-        gapOptimizerSecondTreeTraversal2(*son, sites, scores, threshold);
+        gapOptimizerSecondTreeTraversal2(*son, sites, scores, threshold, reference, nbSequencesRef);
       }
     }
     //Finally we count all sites:
     for (size_t i = 0; i < nbSites; ++i) {
-      if (static_cast<double>(nodeScores.down[i]) / static_cast<double>(nodeScores.nbSequencesDown) >= threshold) {
+      if (static_cast<double>(nodeScores.down[i] + reference[i]) / static_cast<double>(nodeScores.nbSequencesDown + nbSequencesRef) >= threshold) {
         nodeScores.nbSitesDown++;
         nodeScores.nbCharsDown += nodeScores.down[i];
       }
     }
   }
-  if (node.hasFather()) gapOptimizerUpstreamUpdate2(*node.getFather(), &node, sites, scores, threshold);
+  if (node.hasFather()) gapOptimizerUpstreamUpdate2(*node.getFather(), &node, sites, scores, threshold, reference, nbSequencesRef);
 }
+
+AlignmentPartitionScores2& gapOptimizerDownstreamUpdate2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
+{
+  AlignmentPartitionScores2& nodeScores = scores[node.getId()]; //This eventually creates scores for this node.
+  size_t nbSites = sites.getNumberOfSites();
+  nodeScores.id = node.getId();
+  nodeScores.down.assign(nbSites, 0);
+  nodeScores.nbSitesDown = 0;
+  nodeScores.nbCharsDown = 0;
+  
+  //We distinguish two cases, whether the node is a leaf or an inner node:
+  if (node.isLeaf()) {
+    //This is a leaf, we initialize arrays from the sequence data.
+    const Sequence& seq = sites.getSequence(node.getName()); //We assume that the alignment contains all leaves of the tree.
+    //This one at least is trivial:
+    nodeScores.nbSequencesDown = 1;
+    //Now we need to initialize the bit vector and count sites:
+    for (size_t i = 0; i < nbSites; ++i) {
+      bool test = !seq.getAlphabet()->isGap(seq[i]);
+      if (filterUnresolved)
+        test = test & !seq.getAlphabet()->isUnresolved(seq[i]);
+      nodeScores.down[i] = (test ? 1 : 0); //NB: we need to adapt in case we also want to ignore generic characters.
+    }
+  } else {
+    //This is an inner node.
+    //All calculations are performed recursively from the results of son nodes:
+    nodeScores.nbSequencesDown = 0;
+    for (size_t k = 0; k < node.getNumberOfSons(); ++k) {
+      //We loop over all son nodes:
+      const Node* son = node.getSon(k);
+      //We need to make computations for the subtree first and get the results:
+      AlignmentPartitionScores2& sonScores = scores[son->getId()];
+      //Now we make computations for this node:
+      nodeScores.nbSequencesDown += sonScores.nbSequencesDown;
+      for (size_t i = 0; i < nbSites; ++i)
+        nodeScores.down[i] += sonScores.down[i];
+    }
+  }
+  //Finally we count all sites:
+  for (size_t i = 0; i < nbSites; ++i) {
+    if (static_cast<double>(nodeScores.down[i] + reference[i]) / static_cast<double>(nodeScores.nbSequencesDown + nbSequencesRef) >= threshold) {
+      nodeScores.nbSitesDown++;
+      nodeScores.nbCharsDown += nodeScores.down[i];
+    }
+  }
+  return nodeScores;
+}
+
+
 
 class Selector {
   public:
@@ -428,8 +411,8 @@ class InputSelector: public Selector {
 int main(int args, char ** argv)
 {
   cout << "******************************************************************" << endl;
-  cout << "*           Bio++ Alignment Optimizer, version 2.2.0.            *" << endl;
-  cout << "* Author: J. Dutheil                        Last Modif. 02/10/14 *" << endl;
+  cout << "*           Bio++ Alignment Optimizer, version 0.1.0.            *" << endl;
+  cout << "* Author: J. Dutheil                        Last Modif. 24/10/14 *" << endl;
   cout << "******************************************************************" << endl;
   cout << endl;
   
@@ -448,15 +431,99 @@ int main(int args, char ** argv)
   auto_ptr<Alphabet> alphabet(SequenceApplicationTools::getAlphabet(bppalnoptim.getParams()));
   auto_ptr<SiteContainer> sites(SequenceApplicationTools::getSiteContainer(alphabet.get(), bppalnoptim.getParams()));
 
-  //Get tree:
-  auto_ptr< TreeTemplate<Node> > tree;
-  tree.reset(dynamic_cast<TreeTemplate<Node> *>(PhylogeneticsApplicationTools::getTree(bppalnoptim.getParams())));
-
   //Get options:
   double threshold = ApplicationTools::getDoubleParameter("threshold", bppalnoptim.getParams(), 0.5, "", true, 1);
   ApplicationTools::displayResult("Minimum amount of data per site", threshold);
   bool filterUnresolved = ApplicationTools::getBooleanParameter("filter_unresolved", bppalnoptim.getParams(), false, "", true, 1);
   ApplicationTools::displayBooleanResult("Filter unresolved characters", filterUnresolved);
+
+  //Deal with reference alignment, if any.
+  vector<string> refSequencesNames = ApplicationTools::getVectorParameter<string>("reference.sequences", bppalnoptim.getParams(), ',', "", "", true, 1);
+  size_t nbSequencesRef = refSequencesNames.size();
+  ApplicationTools::displayResult("Number of reference sequences", nbSequencesRef);
+  AlignedSequenceContainer refAln(alphabet.get());
+  for (size_t i = 0; i < nbSequencesRef; ++i) {
+    try {
+      auto_ptr<Sequence> seq(sites->removeSequence(refSequencesNames[i]));
+      refAln.addSequence(*seq);
+    } catch(SequenceNotFoundException) {
+      throw Exception("No sequence with name '" + refSequencesNames[i] + "' was found in the input alignment.");
+    }
+  }
+  size_t totalNbSites = sites->getNumberOfSites();
+  ApplicationTools::displayResult("Total number of sequences", sites->getNumberOfSequences());
+  ApplicationTools::displayResult("Total number of sites", totalNbSites);
+  vector<unsigned int> reference(totalNbSites, 0);
+  for (size_t i = 0; i < nbSequencesRef; ++i) {
+    const Sequence& seq = refAln.getSequence(i);
+    for (size_t j = 0; j < totalNbSites; ++j) {
+      if (!(alphabet->isGap(seq[j]) || (filterUnresolved && alphabet->isUnresolved(seq[j]))))
+        reference[j]++;
+    }
+  }
+
+  //Get tree:
+  auto_ptr< TreeTemplate<Node> > tree;
+  auto_ptr< TreeTemplate<Node> > origTree;
+  
+  //input or cluster:
+  string inputTree = ApplicationTools::getStringParameter("input.tree.method", bppalnoptim.getParams(), "AutoCluster", "", false, 1);
+  map<string, string> inputTreeParams;
+  string inputTreeName;
+  KeyvalTools::parseProcedure(inputTree, inputTreeName, inputTreeParams);
+  if (inputTreeName == "AutoCluster") {
+    //Compute pairwise distance matrix:
+    ApplicationTools::displayTask("Computing pairwise overlap matrix", true);
+    size_t n = sites->getNumberOfSequences();
+    DistanceMatrix d(sites->getSequencesNames());
+    size_t k = 0, m = n * (n - 1) / 2;
+    for (size_t i = 1; i < n; ++i) {
+      d(i, i) = 0.;
+      for (size_t j = 0; j < i; ++j) {
+        k++;
+        ApplicationTools::displayGauge(k, m);
+        d(i, j) = d(j, i) = overlapDistance(sites->getSequence(i), sites->getSequence(j));
+      }
+    }
+    ApplicationTools::displayTaskDone();
+    //Now we build a cluster tree:
+    string linkage = ApplicationTools::getStringParameter("linkage", inputTreeParams, "median", "", true, 2);
+    string linkMode = "";
+    if (linkage == "complete") linkMode = HierarchicalClustering::COMPLETE; 
+    if (linkage == "single"  ) linkMode = HierarchicalClustering::SINGLE; 
+    if (linkage == "average" ) linkMode = HierarchicalClustering::AVERAGE;
+    if (linkage == "median"  ) linkMode = HierarchicalClustering::MEDIAN;
+    if (linkage == "ward"    ) linkMode = HierarchicalClustering::WARD;
+    if (linkage == "centroid") linkMode = HierarchicalClustering::CENTROID;
+    if (linkMode == "") throw Exception("Invalid linkage mode: " + linkage + ".");
+    ApplicationTools::displayResult("Clustering linkage mode", linkage);
+    ApplicationTools::displayTask("Computing cluster tree", true);
+    HierarchicalClustering hclust(linkMode, d, true);
+    tree.reset(hclust.getTree());
+    tree->unroot();
+    ApplicationTools::displayTaskDone();
+  } else if (inputTreeName == "File") {
+    tree.reset(dynamic_cast<TreeTemplate<Node> *>(PhylogeneticsApplicationTools::getTree(bppalnoptim.getParams())));
+    if (tree->isRooted()) {
+      ApplicationTools::displayWarning("Tree has been unrooted.");
+      tree->unroot();
+    }
+    origTree.reset(tree->clone()); //We keep a copy of the original tree
+    for (size_t i = 0; i < nbSequencesRef; ++i) {
+      try  {
+        TreeTemplateTools::dropLeaf(*tree, refSequencesNames[i]);
+      } catch(NodeNotFoundException&) {} //Just ignore this, tree does not include ref sequences and that is ok.
+    }
+  } else {
+    throw Exception("Unrecognized tree input method: " + inputTreeName + ".");
+  }
+  //Reorder the alignment according to tree and use sequence storage instead of site storage (more efficient);
+  vector<string> leafNames = tree->getLeavesNames();
+  AlignedSequenceContainer* asc = new AlignedSequenceContainer(alphabet.get());
+  for (size_t i = 0; i < leafNames.size(); ++i) {
+    asc->addSequence(sites->getSequence(leafNames[i]));
+  }
+  sites.reset(asc);
 
   //The main loop:
   string logPath = ApplicationTools::getAFilePath("output.log", bppalnoptim.getParams(), false, false, "", true, "bppalnoptim.log", 1);
@@ -465,8 +532,8 @@ int main(int args, char ** argv)
 
   //Build initial scores. This will be updated after each iteration, if needed.
   Index2 indexedScores;
-  gapOptimizerFirstTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, filterUnresolved); 
-  gapOptimizerSecondTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold);
+  gapOptimizerFirstTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, filterUnresolved, reference, nbSequencesRef); 
+  gapOptimizerSecondTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, reference, nbSequencesRef);
 
   //Choose analysis mode:
   string methodDesc = ApplicationTools::getStringParameter("method", bppalnoptim.getParams(), "Input(show=10)", "", false, 1);
@@ -477,14 +544,24 @@ int main(int args, char ** argv)
   //We try to maximize the number of sites while removing the minimum number of sequences
   size_t nbDisplay = 1;
   auto_ptr<Selector> selector;
+  unsigned int minNbSequences = 0;
   if (methodName == "Auto" || methodName == "Diagnostic") {
     selector.reset(new AutoSelector());
+    if (methodName == "Auto") {
+      minNbSequences = ApplicationTools::getParameter<unsigned int>("min_nb_sequences", methodArgs, 0, "", true, 1);
+      if (minNbSequences == 0) {
+        double f = ApplicationTools::getParameter<double>("min_relative_nb_sequences", methodArgs, 0, "", true, 1);
+        minNbSequences = static_cast<unsigned int>(floor(static_cast<double>(nbSequencesRef + sites->getNumberOfSequences()) * f));
+      }
+    }
   } else if (methodName == "Input") {
     selector.reset(new InputSelector());
     nbDisplay = ApplicationTools::getParameter<size_t>("show", methodArgs, 10, "", false, 2);
   } else {
     throw Exception("Unrecognized selection method: " + methodDesc);
   }
+  if (minNbSequences > 0)
+    ApplicationTools::displayResult("Minimum number of sequences to keep", minNbSequences);
 
   auto_ptr<Comparator> comp;
   string compCrit = ApplicationTools::getStringParameter("comparison", bppalnoptim.getParams(), "MaxSites", "", false, 1);
@@ -499,6 +576,8 @@ int main(int args, char ** argv)
 
   bool test = true;
   unsigned int iteration = 0;
+  vector<string> removedSequenceNames;
+  logfile << "0\t0\t" << tree->getRootId() << "\t" << indexedScores[tree->getRootId()].nbSequencesDown << "\t0\t" << indexedScores[tree->getRootId()].nbSitesDown << "\t0\t" << indexedScores[tree->getRootId()].nbCharsDown << "\t0" << endl;
   while (test) {
     iteration++;
     unsigned int nbSequences = indexedScores[tree->getRootId()].nbSequencesDown;
@@ -509,14 +588,14 @@ int main(int args, char ** argv)
     ApplicationTools::displayResult("Number of chars in alignment", nbChars);
 
     //Maximizes the number of sites:
-    //First ge all splits which improve the number of sites:
+    //First get all splits which improve the number of sites and meet the stopping condition, if any:
     vector<Group> improvingGroups;
     for (Index2::iterator it = indexedScores.begin(); it != indexedScores.end(); ++it) {
       Group gup = it->second.getGroupUp();
-      if (comp->isImproving(gup, nbSites, nbChars))
+      if (comp->isImproving(gup, nbSites, nbChars) && gup.nbSequences >= minNbSequences)
         improvingGroups.push_back(gup);
       Group gdo = it->second.getGroupDown(); 
-      if (comp->isImproving(gdo, nbSites, nbChars))
+      if (comp->isImproving(gdo, nbSites, nbChars) && gdo.nbSequences >= minNbSequences)
         improvingGroups.push_back(gdo); 
     }
     //Second sort according to number of sequences removed:
@@ -544,23 +623,31 @@ int main(int args, char ** argv)
         Node* grandFather = 0;
         if (father->hasFather()) 
           grandFather = father->getFather();
+        vector<string> removedLeaves = TreeTemplateTools::getLeavesNames(*node);
         TreeTemplateTools::dropSubtree(*tree, node);
+        removedSequenceNames.insert(removedSequenceNames.end(), removedLeaves.begin(), removedLeaves.end());
         VectorSiteContainer* selectedSites = new VectorSiteContainer(sites->getAlphabet());
         SequenceContainerTools::getSelectedSequences(*sites, tree->getLeavesNames(), *selectedSites);
         sites.reset(selectedSites);
         //We need to recompute down scores of all parent nodes up to the root:
         if (grandFather) {
-          gapOptimizerUpstreamUpdate2(*grandFather, 0, *sites, indexedScores, threshold);
-          gapOptimizerSecondTreeTraversal2(*grandFather, *sites, indexedScores, threshold);
+          gapOptimizerUpstreamUpdate2(*grandFather, 0, *sites, indexedScores, threshold, reference, nbSequencesRef);
+          gapOptimizerSecondTreeTraversal2(*grandFather, *sites, indexedScores, threshold, reference, nbSequencesRef);
         } else {
           //The remove clade was branching at the root
-          gapOptimizerSecondTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold);
+          if (tree->isRooted()) {
+            tree->unroot(); //The tree may have become artifically rooted as we removed one son node, there may be only two left :(
+            gapOptimizerDownstreamUpdate2(*tree->getRootNode(), *sites, indexedScores, threshold, filterUnresolved, reference, nbSequencesRef);
+          }
+          gapOptimizerSecondTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, reference, nbSequencesRef);
         }
       } else {
         //Main group is 'Down', 'Up' should be removed...
         //We set the node as new root node and delete the rest of the tree.
         father->removeSon(node);
+        vector<string> removedLeaves = TreeTemplateTools::getLeavesNames(*tree->getRootNode());
         TreeTemplateTools::deleteSubtree(tree->getRootNode());
+        removedSequenceNames.insert(removedSequenceNames.end(), removedLeaves.begin(), removedLeaves.end());
         tree->setRootNode(node);
         if (tree->getNumberOfLeaves() > 1) {
           tree->unroot();
@@ -593,7 +680,7 @@ int main(int args, char ** argv)
         SequenceContainerTools::getSelectedSequences(*sites, tree->getLeavesNames(), *selectedSites);
         sites.reset(selectedSites);
         //We recompute up scores only:
-        gapOptimizerSecondTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold);
+        gapOptimizerSecondTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, reference, nbSequencesRef);
       }
       //We update the index by removing unecessary nodes:
       vector<int> ids = tree->getNodesId();
@@ -610,10 +697,24 @@ int main(int args, char ** argv)
 
   if (methodName != "Diagnostic") {
     //Write final alignment:
-    SequenceApplicationTools::writeAlignmentFile(*sites.get(), bppalnoptim.getParams());
+    if (ApplicationTools::getStringParameter("output.sequence.file", bppalnoptim.getParams(), "none", "", true, 1) != "none") {
+      if (nbSequencesRef > 0) {
+        SequenceContainerTools::append(refAln, *sites.get());
+        SequenceApplicationTools::writeAlignmentFile(refAln, bppalnoptim.getParams());
+      } else {
+        SequenceApplicationTools::writeAlignmentFile(*sites.get(), bppalnoptim.getParams());
+      }
+    }
 
     //Write final tree:
-    PhylogeneticsApplicationTools::writeTree(*tree.get(), bppalnoptim.getParams());
+    if (origTree.get()) {
+      for (size_t i = 0; i < removedSequenceNames.size(); ++i)
+        TreeTemplateTools::dropLeaf(*origTree, removedSequenceNames[i]);
+      PhylogeneticsApplicationTools::writeTree(*origTree.get(), bppalnoptim.getParams());
+    } else {
+      //Warning! This will not contain the reference sequence names! (and that is ok :) ).
+      PhylogeneticsApplicationTools::writeTree(*tree.get(), bppalnoptim.getParams());
+    }
   }
 
   bppalnoptim.done();
