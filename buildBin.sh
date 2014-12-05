@@ -1,5 +1,5 @@
 #! /bin/sh
-arch=x86_64 #i686
+arch=`uname -m`
 version=0.1.0-1
 
 strip physamp/bppalnoptim
