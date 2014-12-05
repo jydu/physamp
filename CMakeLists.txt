@@ -66,15 +66,15 @@ IF(MAN)
     MESSAGE("-- Found nroff here: ${NROFF_EXE}")
     MESSAGE("   Adding targets: man")
 
-    #    ADD_CUSTOM_TARGET(man
-    #      ALL
-      #      COMMAND cp bppphysamp.1.txt bppphysamp.1
-      #      COMMAND ${DOC_COMPRESS} -f bppphysamp.1
-      #      COMMAND cp bppalnoptim.1.txt bppalnoptim.1
-      #      COMMAND ${DOC_COMPRESS} -f bppalnoptim.1
-      #      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/man
-      #      )
-    SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "man/bppml.1.${DOC_COMPRESS_EXT};man/bppseqgen.1.${DOC_COMPRESS_EXT};man/bppdist.1.${DOC_COMPRESS_EXT};man/bpppars.1.${DOC_COMPRESS_EXT};man/bppseqman.1.${DOC_COMPRESS_EXT};man/bppconsense.1.${DOC_COMPRESS_EXT};man/bppancestor.1.${DOC_COMPRESS_EXT};man/bppreroot.1.${DOC_COMPRESS_EXT};man/bppphysamp.1.${DOC_COMPRESS_EXT};man/bpptreedraw.1.${DOC_COMPRESS_EXT};man/bppalnscore.1.${DOC_COMPRESS_EXT};man/bppmixedlikelihoods.1.${DOC_COMPRESS_EXT}")
+        ADD_CUSTOM_TARGET(man
+          ALL
+          #COMMAND cp bppphysamp.1.txt bppphysamp.1
+          #COMMAND ${DOC_COMPRESS} -f bppphysamp.1
+            COMMAND cp bppalnoptim.1.txt bppalnoptim.1
+            COMMAND ${DOC_COMPRESS} -f bppalnoptim.1
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/man
+            )
+    SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "man/bppalnoptim.1.${DOC_COMPRESS_EXT};man/bppphysamp.1.${DOC_COMPRESS_EXT};")
 
   ELSE()
     MESSAGE(FATAL_ERROR "Program nroff required but not found.")

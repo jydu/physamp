@@ -1,0 +1,37 @@
+.TH BPPALNOPTIM 1 LOCAL
+
+.SH NAME
+
+bppalnoptim - Sequence alignment optimization according to the number of sequences vs. number of sites trade-off
+
+.SH SYNOPSIS
+
+.B bppalnoptim [options]
+
+.SH AVAILABILITY
+
+All UNIX flavors
+
+.SH DESCRIPTION
+
+bppalnoptim samples sequences from an alignment in order to maximize the number of sites with a given minimal coverage.
+
+.SH OPTIONS
+
+You should refer to 'info physamp' or to the online manual of physamp for a complete list of available options.
+
+.TP 5
+
+--noninteractive=yes
+
+generates output for redirection into a file.
+
+.TP
+
+param=file
+
+reads a file for loading options
+
+.SH AUTHOR
+
+Julien Dutheil.
