@@ -95,25 +95,111 @@ Programs in the PhySamp package follow the @samp{BppO} syntax. They are command 
 @node bppalnoptim,  , Introduction, Top
 @chapter Sampling alignment to maximize the number of sites with minimum coverage
 
-TestNH reads an alignment file using the same syntax as all bppSuite programs (@ref{Sequences, , , bppsuite, @uref{http://home.gna.org/bppsuite/doc/Sequences.html#Sequences}}). All formats are supported, as well as sequence filtering options. It performs the Bowker test for all pairs of sequences, and compute the respective p-values. Two statistics are then computed, based on the pairwise tests: The median of all pairwise statistics, and the number of significant tests, given a certain threshold, specified with the option:
+The option files for @sc{bppalnoptim} fall in three sections: input of alignment and guide tree, filter parameters and output files.
+
+@section Input files
+
+@sc{bppalnoptim} reads a sequence alignment file using the same syntax as all bppSuite programs (@ref{Sequences, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/Sequences.html#Sequences}}). All formats are supported, as well as sequence filtering options.
+
+In order to perform its sampling procedure, @sc{bppalnoptim} requires a @emph{guide tree}. This guide tree can be provided as input or built using a sequence hierarchical clustering approach.
+Providing a guide tree will be in most cases faster, as software like FastTree can produce accurate phylogenetic trees for large data sets in a very short time.
+
+@itemize @bullet
+@item
+User-defined guide tree are provided using the option @command{input.tree.method=File}, and the standard option for reading tree files in the BppO syntax (@ref{Sequences, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/Tree.html#Tree}}).
+@item
+Clustering trees are built using the option @command{input.tree.method = AutoCluster(linkage=@{linkage_mode@})}, where @command{@{linkage_mode@}} is one of @emph{single}, @emph{complete}, @emph{median}, @emph{average}, @emph{centroid} or @emph{ward}.
+@end itemize
+
+@section Sampling mode and parameters 
+
+A few option enables the configuration of the sampling procedure:
 @table @command
-@item bowker_test.threshold = @{float>0@}
-The threshold to consider pairwise tests significant.
+@item filter_unresolved = @{yes/no@}
+Tell if unresolved characters such as 'N' (nucleotides) and 'X' (proteins) should be considered together with gaps ('-') in coverage calculations.
+@item threshold = @{float[0,1]@}
+The minimum coverage for a site to be included in the analysis. A threshold of 0.7 means that only sites with no more than 30\% gaps (or unresolved characters, if @command{filter_unresolved=yes}) will be considered suitable.
+@item method = @{Diagnostic|Input|Auto@}
+One of three possible running modes, which are detailed below.
+@item comparison = @{MaxSites|MaxChars@}
+Criterion to compare sequences subsets. @command{MaxSites} will maximize the number of sites with minimal coverage (default), while @command{MaxChars} will maximize the amount of data (number of sequences * number of sites).
 @end table
 
-In order to evaluate the global significance of the test for the full alignment, the statistics have to be compared to their null expectation. This is achieved using a parametric bootstrap approach, where sequences are simulated under a homogeneous model of evolution.
-Such a model requires a phylogenetic tree to be input, using the syntax described in the bppSuite manual (@ref{Tree, , , bppsuite, @uref{http://home.gna.org/bppsuite/doc/Tree.html#Tree}}). Any model of bppSuite can then be used (@ref{Model, , , bppsuite, @uref{http://home.gna.org/bppsuite/doc/Model.html#Model}}). As a null hypothesis a homogeneous model should be used, but it is possible to test any alternative hypothesis, as performed in Dutheil and Boussau (2008). Note: when a nonhomogeneous model is specified, which involves nodes id specification, it is safer to use the NHX input format for trees, which allows to explicitly records the ids for each node. Alternatively, nodes will be numbered sequentially while parsed.
-The number of simulations to perform is specified using option
+Here comes a description of the three running modes:
+
+@subsection Running mode: Input
+
+This is an interactive mode, where the user is prompt for which sequence to select at each iteration:
+@example
+@group
+Number of sequences in alignment.......: 1652
+Number of sites in alignment...........: 129
+Number of chars in alignment...........: 182603
+Choice	Node	#seq	%seq	#sites	%sites	#chars	%chars
+1)	2030	1647	-5	131	+2	184714	2111
+2)	404	1647	-5	131	+2	184636	2033
+3)	1709	1647	-5	131	+2	184604	2001
+4)	1735	1647	-5	131	+2	184592	1989
+5)	1836	1647	-5	131	+2	184590	1987
+Your choice (0 to stop):
+@end group
+@end example
+Entering 0 will stop the filtering procedure and output the current sequence selection. Possible choices are ordered according to the @command{comparison} option.
+In the above example, the current selection has 1,652 sequences and 129 sites with the given minimal coverage.
+Choice 1 proposes to remove 5 sequences, which would bring the total number of sequences to 1,647. This would gain 2 more sites with the required minimum coverage.
+Choice 2 also proposes to remove 5 sequences in order to add 2 more sites, but the total number of characters gained would be a bit lower. This means that even if both selection have the same number of sites, the ones in choice 1 have a higher coverage than the ones in choice 2. Picking option 1 leads to another proposal:
+@example
+@group
+Number of sequences in alignment.......: 1647
+Number of sites in alignment...........: 131
+Number of chars in alignment...........: 184714
+Choice	Node	#seq	%seq	#sites	%sites	#chars	%chars
+1)	1930	1645	-2	132	+1	185794	1080
+2)	2246	1645	-2	132	+1	185792	1078
+3)	1950	1645	-2	132	+1	185788	1074
+4)	2093	1645	-2	132	+1	185786	1072
+5)	413	1645	-2	132	+1	185784	1070
+Your choice (0 to stop):
+@end group
+@end example
+and so on. The alogrithm ends either when the user enter '0' or when no more improving option exist.
+The number of proposal at each iteration can be specified using the @command{show=@{int>0@}} argument:
+@command{method=Input(show=5)}.
+
+@subsection Running mode: Diagnostic
+
+This mode will automatically pick the best choice at each iteration according to the @command{comparison} criterion until no more improving choice is proposed.
+The goal of this mode is mainly to plot a trade-off curve (see the example directory provided with the source code distribution).
+Only log files are produced, no sequence or tree output are written.
+
+@subsection Running mode: Auto
+
+This mode works in a similar way as the Diagnostic mode, by picking the best choice at each iteration, but will stop when a given condition is reached and produce output alignments and trees.
+Currently two stopping conditions are implemented:
+
 @table @command
-@item bootstrap.number = @{int > 0@}
-The number of bootstrap replicates to perform.
+
+@item Auto(min_nb_sequences=@{int>0@}
+will stop when no more improvement can be found or when all improving steps would bring the number of sequences below the given number.
+
+@item Auto(min_relative_nb_sequences=@{int[0,1]@}
+will stop when no more improvement can be found or when all improving steps would bring the proportion of remaining sequences below the given threshold.
+
 @end table
-TestNH will then report a p-value based on these simulations for the two global statistics (median of pairwise statistics and number of pairwise significant tests). The p-value is computed as @math{(N_{great} + 1)/(N_{tot} + 1)}, where @math{N_{great}} is the number of replicates for which the statistics was greater or equal to the one of the real data set, and @math{N_{tot}} is the total number of replicates.
-In addition, the statistic for each replicate can be output in a separate file, for visual inspection of the distribution:
+
+@section Output files
+
+@sc{bppalnoptim} generates several ouput files:
+
 @table @command
-@item bootstrap.dist_file = @{path@}
-The file where to output detailed simulation results (in text format, one simulation per line).
+
+@item output.log = @{path@}
+Logfile containing the characteristics of each iteration. This file can be used to plot the trade-off curve (see Diagnostic mode).
+
 @end table
+
+The sampled alignment is written using the standard options in the BppO syntax (@ref{WritingSequences, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/WritingSequences.html#WritingSequences}}).
+Optionally, the sampled tree can also be written using options from the BppO syntax (@ref{WritingTrees, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/WritingTrees.html#WritingTrees}}).
 
 @c ------------------------------------------------------------------------------------------------------------------
 
