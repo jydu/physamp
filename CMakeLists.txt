@@ -90,11 +90,11 @@ IF(INFO)
     SET(ADD_INFO_TO "ALL")
     MESSAGE("   Adding target info to target all")
     
-    #    ADD_CUSTOM_TARGET(info
-    #      ${ADD_INFO_TO}
-    #      COMMAND ${MAKEINFO_EXE} physamp.texi
-    #      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/doc
-    #      )
+    ADD_CUSTOM_TARGET(info
+      ${ADD_INFO_TO}
+      COMMAND ${MAKEINFO_EXE} physamp.texi
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/doc
+    )
 
     ADD_CUSTOM_TARGET(html
       COMMAND ${MAKEINFO_EXE} --html --css-ref=http://www.w3.org/StyleSheets/Core/Steely physamp.texi

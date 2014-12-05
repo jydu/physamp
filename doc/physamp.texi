@@ -1,0 +1,127 @@
+\input texinfo   @c -*-texinfo-*-
+@c %**start of header
+@setfilename physamp.info
+@settitle PhySamp Manual 0.1.0
+@documentencoding UTF-8
+@afourpaper
+@dircategory Science Biology Genetics
+@direntry
+* bppalnoptim: (bppalnoptim)    Alignment Optimizer.
+@end direntry
+@c %**end of header
+
+
+@copying
+This is the manual of the PhySamp package, version 0.1.0.
+
+Copyright @copyright{} 2014 Julien Y. Dutheil
+@end copying
+
+@titlepage
+@title PhySamp Manual
+@author Julien Dutheil
+@author @email{julien.dutheil@@univ-montp2.fr}
+
+@c The following two commands start the copyright page.
+@page
+@vskip 0pt plus 1fill1
+@insertcopying
+@end titlepage
+
+@c Output the table of contents at the beginning.
+@contents
+
+@ifnottex
+@node Top, Introduction, (dir), (dir)
+@top The PhySamp Manual
+
+@insertcopying
+@end ifnottex
+
+@menu
+* Introduction::
+* bppalnoptim::
+
+@detailmenu
+ --- The Detailed Node Listing ---
+
+Introduction
+
+* Description::
+* Run::
+
+@end detailmenu
+@end menu
+
+@c ------------------------------------------------------------------------------------------------------------------
+
+@node Introduction, bppalnoptim, Top, Top
+@chapter Introduction
+
+PhySamp is a software package for phylogenetic sampling. Its aim is to optimize a sequence alignment data set based on its corresponding phylogeny.
+
+PhySamp is written on the Bio++ libraries, and uses the BppO syntax for options, introduced with the Bio++ Program Suite software (BppSuite). Part of this manual will therefore link to the corresponding manual of BppSuite where needed, and only describe options specific to the PhySamp package.
+
+Note that several detailed examples are provided along with the source code of the program, and can serve as good training starts. This manual intends to provide an exhaustive description of the options used in these examples.
+
+@c ------------------------------------------------------------------------------------------------------------------
+
+@menu
+* Description::
+* Run::
+@end menu
+
+@node Description, Run, Introduction, Introduction
+@section Description of the programs
+
+The PhySamp package currently contains one program:
+
+@table @samp
+
+@item bppalnoptim
+optimize a sequence alignment by removing sequences in order to maximize the number of sites with a minimal coverage.
+
+@end table
+
+@c ------------------------------------------------------------------------------------------------------------------
+
+@node Run,  , Description, Introduction
+@section How to run the program
+
+Programs in the PhySamp package follow the @samp{BppO} syntax. They are command line driven, and take as input options with the format @samp{name}=@samp{value}. These options can be gathered into a file, and loaded using @command{param=optionfile}. Please refer to the Bio++ Program Suite manual for more details, including the use of variables, priority of option values, etc.
+
+@c ------------------------------------------------------------------------------------------------------------------
+
+@node bppalnoptim,  , Introduction, Top
+@chapter Sampling alignment to maximize the number of sites with minimum coverage
+
+TestNH reads an alignment file using the same syntax as all bppSuite programs (@ref{Sequences, , , bppsuite, @uref{http://home.gna.org/bppsuite/doc/Sequences.html#Sequences}}). All formats are supported, as well as sequence filtering options. It performs the Bowker test for all pairs of sequences, and compute the respective p-values. Two statistics are then computed, based on the pairwise tests: The median of all pairwise statistics, and the number of significant tests, given a certain threshold, specified with the option:
+@table @command
+@item bowker_test.threshold = @{float>0@}
+The threshold to consider pairwise tests significant.
+@end table
+
+In order to evaluate the global significance of the test for the full alignment, the statistics have to be compared to their null expectation. This is achieved using a parametric bootstrap approach, where sequences are simulated under a homogeneous model of evolution.
+Such a model requires a phylogenetic tree to be input, using the syntax described in the bppSuite manual (@ref{Tree, , , bppsuite, @uref{http://home.gna.org/bppsuite/doc/Tree.html#Tree}}). Any model of bppSuite can then be used (@ref{Model, , , bppsuite, @uref{http://home.gna.org/bppsuite/doc/Model.html#Model}}). As a null hypothesis a homogeneous model should be used, but it is possible to test any alternative hypothesis, as performed in Dutheil and Boussau (2008). Note: when a nonhomogeneous model is specified, which involves nodes id specification, it is safer to use the NHX input format for trees, which allows to explicitly records the ids for each node. Alternatively, nodes will be numbered sequentially while parsed.
+The number of simulations to perform is specified using option
+@table @command
+@item bootstrap.number = @{int > 0@}
+The number of bootstrap replicates to perform.
+@end table
+TestNH will then report a p-value based on these simulations for the two global statistics (median of pairwise statistics and number of pairwise significant tests). The p-value is computed as @math{(N_{great} + 1)/(N_{tot} + 1)}, where @math{N_{great}} is the number of replicates for which the statistics was greater or equal to the one of the real data set, and @math{N_{tot}} is the total number of replicates.
+In addition, the statistic for each replicate can be output in a separate file, for visual inspection of the distribution:
+@table @command
+@item bootstrap.dist_file = @{path@}
+The file where to output detailed simulation results (in text format, one simulation per line).
+@end table
+
+@c ------------------------------------------------------------------------------------------------------------------
+
+@c end of document
+
+@c @node Index,  , Reference, Top
+@c @unnumbered Index
+@c
+@c @printindex cp
+
+@bye

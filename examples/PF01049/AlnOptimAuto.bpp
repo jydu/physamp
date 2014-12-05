@@ -1,0 +1,23 @@
+# Global variables:
+DATA = PF01049
+LINKAGE = complete
+
+# Input files and formats:
+alphabet = Protein
+input.sequence.file = $(DATA)_full.txt
+input.sequence.format = Fasta
+input.tree.method = AutoCluster(linkage=$(LINKAGE))
+
+# Selection parameters:
+filter_unresolved = yes #Tell if unresolved characters should also be filtered (just like gaps)
+threshold = 0.7 #Minimum proportion of characters per site
+method = Diagnostic #Input(show=10) #Input or Diagnostic
+comparison = MaxSites #MaxSites or MaxChars
+
+# Output files and formats:
+output.log = bppalnoptim_auto_$(LINKAGE).log
+output.sequence.file = $(DATA)_optimized_auto_$(LINKAGE).fasta
+output.sequence.format = Fasta
+output.tree.file = $(DATA)_optimized_auto_$(LINKAGE).dnd
+output.tree.format = Newick
+

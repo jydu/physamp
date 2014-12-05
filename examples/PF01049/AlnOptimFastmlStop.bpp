@@ -1,0 +1,24 @@
+# Global variables:
+DATA = PF01049
+
+# Input files and formats:
+alphabet = Protein
+input.sequence.file = $(DATA)_full.txt
+input.sequence.format = Fasta
+input.tree.method = File
+input.tree.file = $(DATA)_fasttree.dnd
+input.tree.format = Newick
+
+# Selection parameters:
+filter_unresolved = yes #Tell if unresolved characters should also be filtered (just like gaps)
+threshold = 0.7 #Minimum proportion of characters per site
+method = Auto(min_nb_sequences=0, min_relative_nb_sequences=0.5) #Input or Diagnostic or Auto
+comparison = MaxSites #MaxSites or MaxChars
+
+# Output files and formats:
+output.log = bppalnoptim_fastml_stop.log
+output.sequence.file = $(DATA)_optimized_fastml.fasta
+output.sequence.format = Fasta
+output.tree.file = $(DATA)_optimized_fastml.dnd
+output.tree.format = Newick
+
