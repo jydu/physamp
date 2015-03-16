@@ -175,17 +175,28 @@ Only log files are produced, no sequence or tree output are written.
 @subsection Running mode: Auto
 
 This mode works in a similar way as the Diagnostic mode, by picking the best choice at each iteration, but will stop when a given condition is reached and produce output alignments and trees.
-Currently two stopping conditions are implemented:
+Currently two stopping conditions are implemented, which can be combined:
 
 @table @command
 
-@item Auto(min_nb_sequences=@{int>0@}
+@item min_nb_sequences=@{int>0@}
 will stop when no more improvement can be found or when all improving steps would bring the number of sequences below the given number.
 
-@item Auto(min_relative_nb_sequences=@{int[0,1]@}
+@item min_relative_nb_sequences=@{int[0,1]@}
 will stop when no more improvement can be found or when all improving steps would bring the proportion of remaining sequences below the given threshold.
+This option only has an effect if min_nb_sequences is not set or set to 0.
+
+@item min_nb_sites=@{int>0@}
+will stop when the number of sites matching the requested coverage is at least the given number.
+
+@item min_relative_nb_sites=@{int[0,1]@}
+will stop when the number of sites matching the requested coverage is at least the given proportion of total alignment sites.
+This option only has an effect if min_nb_sites is not set or set to 0.
 
 @end table
+
+For instance, @command{Auto(min_nb_sequences=100, min_nb_sites=300)} will stop the filtering when no improvement can be found, at least 300 sites have the minimum requested coverage or when there is no more than 200 sequences left.
+@command{Auto(min_nb_sequences=100)} will perform all possible improvements which do not bring the final number of sequences below 100. @command{Auto(min_nb_sites=300)} will perform all possible improvements until 300 sites have the requested coverage. This might result in having only one sequence left in the output file.
 
 @section Output files
 

@@ -458,6 +458,8 @@ int main(int args, char ** argv)
     //Compute pairwise distance matrix:
     ApplicationTools::displayTask("Computing pairwise overlap matrix", true);
     size_t n = sites->getNumberOfSequences();
+    size_t totmem = (sizeof(vector< vector<double> >) + (sizeof(vector<double>) + sizeof(double) * n) * n) / 1024 / 1024;
+    ApplicationTools::displayResult("Memory required to store distances (Mb)", totmem);
     DistanceMatrix d(sites->getSequencesNames());
     size_t k = 0, m = n * (n - 1) / 2;
     for (size_t i = 1; i < n; ++i) {
@@ -528,6 +530,7 @@ int main(int args, char ** argv)
   size_t nbDisplay = 1;
   auto_ptr<Selector> selector;
   unsigned int minNbSequences = 0;
+  unsigned int minNbSitesRequired = 0;
   if (methodName == "Auto" || methodName == "Diagnostic") {
     selector.reset(new AutoSelector());
     if (methodName == "Auto") {
@@ -535,6 +538,11 @@ int main(int args, char ** argv)
       if (minNbSequences == 0) {
         double f = ApplicationTools::getParameter<double>("min_relative_nb_sequences", methodArgs, 0, "", true, 1);
         minNbSequences = static_cast<unsigned int>(floor(static_cast<double>(nbSequencesRef + sites->getNumberOfSequences()) * f));
+      }
+      minNbSitesRequired = ApplicationTools::getParameter<unsigned int>("min_nb_sites", methodArgs, static_cast<unsigned int>(sites->getNumberOfSites()), "", true, 1);
+      if (minNbSitesRequired == 0) {
+        double f = ApplicationTools::getParameter<double>("min_relative_nb_sites", methodArgs, 1, "", true, 1);
+        minNbSitesRequired = static_cast<unsigned int>(floor(static_cast<double>(sites->getNumberOfSites()) * f));
       }
     }
   } else if (methodName == "Input") {
@@ -545,6 +553,8 @@ int main(int args, char ** argv)
   }
   if (minNbSequences > 0)
     ApplicationTools::displayResult("Minimum number of sequences to keep", minNbSequences);
+  if (minNbSitesRequired > 0)
+    ApplicationTools::displayResult("Stop when this number of sites is reached", minNbSitesRequired);
 
   auto_ptr<Comparator> comp;
   string compCrit = ApplicationTools::getStringParameter("comparison", bppalnoptim.getParams(), "MaxSites", "", false, 1);
@@ -569,6 +579,12 @@ int main(int args, char ** argv)
     ApplicationTools::displayResult("Number of sequences in alignment", nbSequences);
     ApplicationTools::displayResult("Number of sites in alignment", nbSites);
     ApplicationTools::displayResult("Number of chars in alignment", nbChars);
+
+    //Check if we have enough sites:
+    if (nbSites >= minNbSitesRequired) {
+      test = false;
+      continue;
+    }
 
     //Maximizes the number of sites:
     //First get all splits which improve the number of sites and meet the stopping condition, if any:
