@@ -1,7 +1,7 @@
 \input texinfo   @c -*-texinfo-*-
 @c %**start of header
 @setfilename physamp.info
-@settitle PhySamp Manual 0.1.0
+@settitle PhySamp Manual 0.2.0
 @documentencoding UTF-8
 @afourpaper
 @dircategory Science Biology Genetics
@@ -12,15 +12,15 @@
 
 
 @copying
-This is the manual of the PhySamp package, version 0.1.0.
+This is the manual of the PhySamp package, version 0.2.0.
 
-Copyright @copyright{} 2014 Julien Y. Dutheil
+Copyright @copyright{} 2015 Julien Y. Dutheil
 @end copying
 
 @titlepage
 @title PhySamp Manual
 @author Julien Dutheil
-@author @email{julien.dutheil@@univ-montp2.fr}
+@author @email{dutheil@@evolbio.mpg.de}
 
 @c The following two commands start the copyright page.
 @page
@@ -115,8 +115,10 @@ Clustering trees are built using the option @command{input.tree.method = AutoClu
 
 A few option enables the configuration of the sampling procedure:
 @table @command
+@item filter_gaps = @{yes/no@}
+Tell if gap characters ('-') should be considered as missing data.
 @item filter_unresolved = @{yes/no@}
-Tell if unresolved characters such as 'N' (nucleotides) and 'X' (proteins) should be considered together with gaps ('-') in coverage calculations.
+Tell if unresolved characters such as 'N' (nucleotides) and 'X' (proteins) should be considered as missing data.
 @item threshold = @{float[0,1]@}
 The minimum coverage for a site to be included in the analysis. A threshold of 0.7 means that only sites with no more than 30\% gaps (or unresolved characters, if @command{filter_unresolved=yes}) will be considered suitable.
 @item method = @{Diagnostic|Input|Auto@}
