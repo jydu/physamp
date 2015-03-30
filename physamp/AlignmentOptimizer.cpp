@@ -38,6 +38,7 @@ using namespace std;
 // From bpp-seq:
 #include <Bpp/Seq/Alphabet.all>
 #include <Bpp/Seq/Container.all>
+#include <Bpp/Seq/SiteTools.h>
 #include <Bpp/Seq/App/SequenceApplicationTools.h>
 
 // From bpp-phyl:
@@ -57,6 +58,7 @@ void help()
   (*ApplicationTools::message << "__________________________________________________________________________").endLine();
 }
 
+//Note: this is too slow!
 double overlapDistance(const Sequence& seq1, const Sequence& seq2) {
   //double n1 = 0, n2 = 0, n12 = 0;
   double n12 = 0;
@@ -67,6 +69,14 @@ double overlapDistance(const Sequence& seq1, const Sequence& seq2) {
     if (!a->isGap(seq1[i]) && !a->isGap(seq2[i])) n12++;
   }
   //return (1. - 2. * n12 / (n1 + n2)); 
+  return (static_cast<double>(seq1.size()) - n12);
+}
+
+double overlapDistance(const vector<bool>& seq1, const vector<bool>& seq2) {
+  double n12 = 0;
+  for (size_t i = 0; i < seq1.size(); ++i) {
+    if (seq1[i] && seq2[i]) n12++;
+  }
   return (static_cast<double>(seq1.size()) - n12);
 }
 
@@ -193,7 +203,7 @@ class Comparator {
 // Recursive function.
 // This will initialize the scores map and set the down variables.
 // For convenience, we return the scores for the root subtree.
-AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
+AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterGaps, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   AlignmentPartitionScores2& nodeScores = scores[node.getId()]; //This eventually creates scores for this node.
   size_t nbSites = sites.getNumberOfSites();
@@ -210,9 +220,7 @@ AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, con
     nodeScores.nbSequencesDown = 1;
     //Now we need to initialize the bit vector and count sites:
     for (size_t i = 0; i < nbSites; ++i) {
-      bool test = !seq.getAlphabet()->isGap(seq[i]);
-      if (filterUnresolved)
-        test = test & !seq.getAlphabet()->isUnresolved(seq[i]);
+      bool test = !((filterGaps && seq.getAlphabet()->isGap(seq[i])) || (filterUnresolved && seq.getAlphabet()->isUnresolved(seq[i])));
       nodeScores.down[i] += (test ? 1 : 0);
     }
   } else {
@@ -223,7 +231,7 @@ AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, con
       //We loop over all son nodes:
       const Node* son = node.getSon(k);
       //We need to make computations for the subtree first and get the results:
-      AlignmentPartitionScores2& sonScores = gapOptimizerFirstTreeTraversal2(*son, sites, scores, threshold, filterUnresolved, reference, nbSequencesRef);
+      AlignmentPartitionScores2& sonScores = gapOptimizerFirstTreeTraversal2(*son, sites, scores, threshold, filterGaps, filterUnresolved, reference, nbSequencesRef);
       //Now we make computations for this node:
       nodeScores.nbSequencesDown += sonScores.nbSequencesDown;
       for (size_t i = 0; i < nbSites; ++i)
@@ -320,7 +328,7 @@ void gapOptimizerUpstreamUpdate2(const Node& node, const Node* from, const SiteC
   if (node.hasFather()) gapOptimizerUpstreamUpdate2(*node.getFather(), &node, sites, scores, threshold, reference, nbSequencesRef);
 }
 
-AlignmentPartitionScores2& gapOptimizerDownstreamUpdate2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
+AlignmentPartitionScores2& gapOptimizerDownstreamUpdate2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterGaps, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   AlignmentPartitionScores2& nodeScores = scores[node.getId()]; //This eventually creates scores for this node.
   size_t nbSites = sites.getNumberOfSites();
@@ -337,10 +345,8 @@ AlignmentPartitionScores2& gapOptimizerDownstreamUpdate2(const Node& node, const
     nodeScores.nbSequencesDown = 1;
     //Now we need to initialize the bit vector and count sites:
     for (size_t i = 0; i < nbSites; ++i) {
-      bool test = !seq.getAlphabet()->isGap(seq[i]);
-      if (filterUnresolved)
-        test = test & !seq.getAlphabet()->isUnresolved(seq[i]);
-      nodeScores.down[i] = (test ? 1 : 0); //NB: we need to adapt in case we also want to ignore generic characters.
+      bool test = !((filterGaps && seq.getAlphabet()->isGap(seq[i])) || (filterUnresolved && seq.getAlphabet()->isUnresolved(seq[i])));
+      nodeScores.down[i] = (test ? 1 : 0);
     }
   } else {
     //This is an inner node.
@@ -394,8 +400,9 @@ class InputSelector: public Selector {
 int main(int args, char ** argv)
 {
   cout << "******************************************************************" << endl;
-  cout << "*           Bio++ Alignment Optimizer, version 0.1.0.            *" << endl;
-  cout << "* Author: J. Dutheil                        Last Modif. 24/10/14 *" << endl;
+  cout << "*           Bio++ Alignment Optimizer, version 0.2.0.            *" << endl;
+  cout << "* Author: J. Dutheil                        Last Modif. 23/03/15 *" << endl;
+  cout << "*         E. Figuet                                              *" << endl;
   cout << "******************************************************************" << endl;
   cout << endl;
   
@@ -417,8 +424,12 @@ int main(int args, char ** argv)
   //Get options:
   double threshold = ApplicationTools::getDoubleParameter("threshold", bppalnoptim.getParams(), 0.5, "", true, 1);
   ApplicationTools::displayResult("Minimum amount of data per site", threshold);
+  bool filterGaps = ApplicationTools::getBooleanParameter("filter_gaps", bppalnoptim.getParams(), true, "", true, 1);
+  ApplicationTools::displayBooleanResult("Filter gap characters", filterGaps);
   bool filterUnresolved = ApplicationTools::getBooleanParameter("filter_unresolved", bppalnoptim.getParams(), false, "", true, 1);
   ApplicationTools::displayBooleanResult("Filter unresolved characters", filterUnresolved);
+  if (!filterGaps && !filterUnresolved)
+    throw Exception("Error, either gap, unresolved characters or both should be filtered!");
 
   //Deal with reference alignment, if any.
   vector<string> refSequencesNames = ApplicationTools::getVectorParameter<string>("reference.sequences", bppalnoptim.getParams(), ',', "", "", true, 1);
@@ -440,7 +451,7 @@ int main(int args, char ** argv)
   for (size_t i = 0; i < nbSequencesRef; ++i) {
     const Sequence& seq = refAln.getSequence(i);
     for (size_t j = 0; j < totalNbSites; ++j) {
-      if (!(alphabet->isGap(seq[j]) || (filterUnresolved && alphabet->isUnresolved(seq[j]))))
+      if (!((filterGaps && alphabet->isGap(seq[j])) || (filterUnresolved && alphabet->isUnresolved(seq[j]))))
         reference[j]++;
     }
   }
@@ -456,10 +467,24 @@ int main(int args, char ** argv)
   KeyvalTools::parseProcedure(inputTree, inputTreeName, inputTreeParams);
   if (inputTreeName == "AutoCluster") {
     //Compute pairwise distance matrix:
-    ApplicationTools::displayTask("Computing pairwise overlap matrix", true);
     size_t n = sites->getNumberOfSequences();
+    size_t ns = sites->getNumberOfSites();
+
+    //First we compress sequences:
+    vector< vector<bool> > cseqs(n);
+    ApplicationTools::displayTask("Compressing sequences", true);
+    for (size_t i = 0; i < n; ++i) {
+      ApplicationTools::displayGauge(i, n - 1);
+      const Sequence& seq = sites->getSequence(i);
+      cseqs[i].resize(ns);
+      for (size_t j = 0; j < ns; ++j)
+        cseqs[i][j] = !alphabet->isGap(seq[j]);
+    }
+    ApplicationTools::displayTaskDone();
+
     size_t totmem = (sizeof(vector< vector<double> >) + (sizeof(vector<double>) + sizeof(double) * n) * n) / 1024 / 1024;
     ApplicationTools::displayResult("Memory required to store distances (Mb)", totmem);
+    ApplicationTools::displayTask("Computing pairwise overlap matrix", true);
     DistanceMatrix d(sites->getSequencesNames());
     size_t k = 0, m = n * (n - 1) / 2;
     for (size_t i = 1; i < n; ++i) {
@@ -467,10 +492,13 @@ int main(int args, char ** argv)
       for (size_t j = 0; j < i; ++j) {
         k++;
         ApplicationTools::displayGauge(k, m);
-        d(i, j) = d(j, i) = overlapDistance(sites->getSequence(i), sites->getSequence(j));
+        d(i, j) = d(j, i) = overlapDistance(cseqs[i], cseqs[j]);
       }
     }
     ApplicationTools::displayTaskDone();
+    //Free mem:
+    cseqs.clear();
+
     //Now we build a cluster tree:
     string linkage = ApplicationTools::getStringParameter("linkage", inputTreeParams, "median", "", true, 2);
     string linkMode = "";
@@ -513,11 +541,11 @@ int main(int args, char ** argv)
   //The main loop:
   string logPath = ApplicationTools::getAFilePath("output.log", bppalnoptim.getParams(), false, false, "", true, "bppalnoptim.log", 1);
   ofstream logfile(logPath.c_str());  
-  logfile << "Iteration\tChoice\tNode\tNbSequences\tDiffSequences\tNbSites\tDiffSites\tNbChars\tDiffChars" << endl;
+  logfile << "Iteration\tChoice\tNode\tNbSequences\tDiffSequences\tNbSites\tDiffSites\tNbChars\tDiffChars\tMeanEntropy" << endl;
 
   //Build initial scores. This will be updated after each iteration, if needed.
   Index2 indexedScores;
-  gapOptimizerFirstTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, filterUnresolved, reference, nbSequencesRef); 
+  gapOptimizerFirstTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, filterGaps, filterUnresolved, reference, nbSequencesRef); 
   gapOptimizerSecondTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, reference, nbSequencesRef);
 
   //Choose analysis mode:
@@ -530,7 +558,7 @@ int main(int args, char ** argv)
   size_t nbDisplay = 1;
   auto_ptr<Selector> selector;
   unsigned int minNbSequences = 0;
-  unsigned int minNbSitesRequired = 0;
+  unsigned int minNbSitesRequired = static_cast<unsigned int>(sites->getNumberOfSites()) + 1;
   if (methodName == "Auto" || methodName == "Diagnostic") {
     selector.reset(new AutoSelector());
     if (methodName == "Auto") {
@@ -539,7 +567,7 @@ int main(int args, char ** argv)
         double f = ApplicationTools::getParameter<double>("min_relative_nb_sequences", methodArgs, 0, "", true, 1);
         minNbSequences = static_cast<unsigned int>(floor(static_cast<double>(nbSequencesRef + sites->getNumberOfSequences()) * f));
       }
-      minNbSitesRequired = ApplicationTools::getParameter<unsigned int>("min_nb_sites", methodArgs, static_cast<unsigned int>(sites->getNumberOfSites()), "", true, 1);
+      minNbSitesRequired = ApplicationTools::getParameter<unsigned int>("min_nb_sites", methodArgs, minNbSitesRequired, "", true, 1);
       if (minNbSitesRequired == 0) {
         double f = ApplicationTools::getParameter<double>("min_relative_nb_sites", methodArgs, 1, "", true, 1);
         minNbSitesRequired = static_cast<unsigned int>(floor(static_cast<double>(sites->getNumberOfSites()) * f));
@@ -553,7 +581,7 @@ int main(int args, char ** argv)
   }
   if (minNbSequences > 0)
     ApplicationTools::displayResult("Minimum number of sequences to keep", minNbSequences);
-  if (minNbSitesRequired > 0)
+  if (minNbSitesRequired <= static_cast<unsigned int>(sites->getNumberOfSites()))
     ApplicationTools::displayResult("Stop when this number of sites is reached", minNbSitesRequired);
 
   auto_ptr<Comparator> comp;
@@ -570,7 +598,12 @@ int main(int args, char ** argv)
   bool test = true;
   unsigned int iteration = 0;
   vector<string> removedSequenceNames;
-  logfile << "0\t0\t" << tree->getRootId() << "\t" << indexedScores[tree->getRootId()].nbSequencesDown << "\t0\t" << indexedScores[tree->getRootId()].nbSitesDown << "\t0\t" << indexedScores[tree->getRootId()].nbCharsDown << "\t0" << endl;
+  double meanE = 0;
+  for (size_t i = 0; i < sites->getNumberOfSites(); ++i) {
+    meanE += SiteTools::variabilityShannon(sites->getSite(i), false);
+  }
+  meanE /= static_cast<double>(sites->getNumberOfSites());
+  logfile << "0\t0\t" << tree->getRootId() << "\t" << indexedScores[tree->getRootId()].nbSequencesDown << "\t0\t" << indexedScores[tree->getRootId()].nbSitesDown << "\t0\t" << indexedScores[tree->getRootId()].nbCharsDown << "\t0\t" << meanE << endl;
   while (test) {
     iteration++;
     unsigned int nbSequences = indexedScores[tree->getRootId()].nbSequencesDown;
@@ -579,12 +612,13 @@ int main(int args, char ** argv)
     ApplicationTools::displayResult("Number of sequences in alignment", nbSequences);
     ApplicationTools::displayResult("Number of sites in alignment", nbSites);
     ApplicationTools::displayResult("Number of chars in alignment", nbChars);
-
+   
     //Check if we have enough sites:
     if (nbSites >= minNbSitesRequired) {
       test = false;
       continue;
     }
+    ApplicationTools::displayResult("Mean site entropy in alignment", meanE);
 
     //Maximizes the number of sites:
     //First get all splits which improve the number of sites and meet the stopping condition, if any:
@@ -616,7 +650,6 @@ int main(int args, char ** argv)
       Group& group = improvingGroups[choice - 1];
       Node* node = tree->getNode(group.id);
       Node* father = node->getFather();
-      logfile << iteration << "\t" << choice << "\t" << group.id << "\t" << group.nbSequences << "\t" << (static_cast<double>(group.nbSequences) - static_cast<double>(nbSequences)) << "\t" << group.nbSites << "\t+" << (group.nbSites - nbSites) << "\t" << group.nbChars << "\t" << (static_cast<double>(group.nbChars) - static_cast<double>(nbChars)) << endl;
       if (group.direction == 'u') {
         //Main group is 'Up', 'Down' should be removed...
         Node* grandFather = 0;
@@ -636,7 +669,7 @@ int main(int args, char ** argv)
           //The remove clade was branching at the root
           if (tree->isRooted()) {
             tree->unroot(); //The tree may have become artifically rooted as we removed one son node, there may be only two left :(
-            gapOptimizerDownstreamUpdate2(*tree->getRootNode(), *sites, indexedScores, threshold, filterUnresolved, reference, nbSequencesRef);
+            gapOptimizerDownstreamUpdate2(*tree->getRootNode(), *sites, indexedScores, threshold, filterGaps, filterUnresolved, reference, nbSequencesRef);
           }
           gapOptimizerSecondTreeTraversal2(*tree->getRootNode(), *sites, indexedScores, threshold, reference, nbSequencesRef);
         }
@@ -690,6 +723,16 @@ int main(int args, char ** argv)
           ++it;
         }
       }
+   
+      //Compute entropy:
+      meanE = 0;
+      for (size_t i = 0; i < sites->getNumberOfSites(); ++i) {
+        meanE += SiteTools::variabilityShannon(sites->getSite(i), false);
+      }
+      meanE /= static_cast<double>(sites->getNumberOfSites()); 
+      
+      //Write to log file:
+      logfile << iteration << "\t" << choice << "\t" << group.id << "\t" << group.nbSequences << "\t" << (static_cast<double>(group.nbSequences) - static_cast<double>(nbSequences)) << "\t" << group.nbSites << "\t+" << (group.nbSites - nbSites) << "\t" << group.nbChars << "\t" << (static_cast<double>(group.nbChars) - static_cast<double>(nbChars)) << "\t" << meanE << endl;
     }
   }
   logfile.close();
