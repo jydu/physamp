@@ -12,7 +12,7 @@ IF(NOT CMAKE_BUILD_TYPE)
       FORCE)
 ENDIF()
 
-SET(CMAKE_CXX_FLAGS "-Wall -Weffc++ -Wshadow -Wconversion")
+SET(CMAKE_CXX_FLAGS "-std=c++11 -Wall -Weffc++ -Wshadow -Wconversion")
 
 IF(NOT NO_DEP_CHECK)
   SET(NO_DEP_CHECK FALSE CACHE BOOL
@@ -68,10 +68,10 @@ IF(MAN)
 
         ADD_CUSTOM_TARGET(man
           ALL
-          #COMMAND cp bppphysamp.1.txt bppphysamp.1
-          #COMMAND ${DOC_COMPRESS} -f bppphysamp.1
             COMMAND cp bppalnoptim.1.txt bppalnoptim.1
             COMMAND ${DOC_COMPRESS} -f bppalnoptim.1
+            COMMAND cp bppphysamp.1.txt bppphysamp.1
+            COMMAND ${DOC_COMPRESS} -f bppphysamp.1
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/man
             )
     SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "man/bppalnoptim.1.${DOC_COMPRESS_EXT};man/bppphysamp.1.${DOC_COMPRESS_EXT};")

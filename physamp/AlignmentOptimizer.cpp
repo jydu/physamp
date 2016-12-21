@@ -1,5 +1,5 @@
 //
-// File: bppAlignmentOptimizer.cpp
+// File: AlignmentOptimizer.cpp
 // Created by: Julien Dutheil
 // Created on: October 24th 2014 11:15
 //
@@ -54,7 +54,7 @@ void help()
   (*ApplicationTools::message << "bppalnoptim parameter1_name=parameter1_value").endLine();
   (*ApplicationTools::message << "      parameter2_name=parameter2_value ... param=option_file").endLine();
   (*ApplicationTools::message).endLine();
-  (*ApplicationTools::message << "  Refer to the Bio++ Program Suite Manual for a list of available options.").endLine();
+  (*ApplicationTools::message << "  Refer to the PhySamp manual for a list of available options.").endLine();
   (*ApplicationTools::message << "__________________________________________________________________________").endLine();
 }
 
@@ -400,8 +400,8 @@ class InputSelector: public Selector {
 int main(int args, char ** argv)
 {
   cout << "******************************************************************" << endl;
-  cout << "*           Bio++ Alignment Optimizer, version 0.2.0.            *" << endl;
-  cout << "* Author: J. Dutheil                        Last Modif. 23/03/15 *" << endl;
+  cout << "*           Bio++ Alignment Optimizer, version 1.0.0.            *" << endl;
+  cout << "* Author: J. Dutheil                        Last Modif. 21/12/16 *" << endl;
   cout << "*         E. Figuet                                              *" << endl;
   cout << "******************************************************************" << endl;
   cout << endl;

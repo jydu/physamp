@@ -1,7 +1,7 @@
 \input texinfo   @c -*-texinfo-*-
 @c %**start of header
 @setfilename physamp.info
-@settitle PhySamp Manual 0.2.0
+@settitle PhySamp Manual 1.0.0
 @documentencoding UTF-8
 @afourpaper
 @dircategory Science Biology Genetics
@@ -12,9 +12,9 @@
 
 
 @copying
-This is the manual of the PhySamp package, version 0.2.0.
+This is the manual of the PhySamp package, version 1.0.0.
 
-Copyright @copyright{} 2015 Julien Y. Dutheil
+Copyright @copyright{} 2016 Julien Y. Dutheil
 @end copying
 
 @titlepage
@@ -50,6 +50,10 @@ Introduction
 * Description::
 * Run::
 
+Output files
+
+* bppphysamp::
+
 @end detailmenu
 @end menu
 
@@ -74,12 +78,15 @@ Note that several detailed examples are provided along with the source code of t
 @node Description, Run, Introduction, Introduction
 @section Description of the programs
 
-The PhySamp package currently contains one program:
+The PhySamp package currently contains two programs:
 
 @table @samp
 
 @item bppalnoptim
 optimize a sequence alignment by removing sequences in order to maximize the number of sites with a minimal coverage.
+
+@item bppphysamp
+optimize a sequence alignment by removing similar sequences.
 
 @end table
 
@@ -213,6 +220,43 @@ Logfile containing the characteristics of each iteration. This file can be used 
 
 The sampled alignment is written using the standard options in the BppO syntax (@ref{WritingSequences, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/WritingSequences.html#WritingSequences}}).
 Optionally, the sampled tree can also be written using options from the BppO syntax (@ref{WritingTrees, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/WritingTrees.html#WritingTrees}}).
+
+@c ------------------------------------------------------------------------------------------------------------------
+
+@menu
+* bppphysamp::
+@end menu
+
+@node bppphysamp,  , bppalnoptim, bppalnoptim
+@chapter Sampling alignment to remove redundant sequences
+ 
+The Bio++ Phylogenetic Sampler samples sequences from a file according to phylogenetic information.
+The goal is to clean a big data set by removing redundant sequences, bringing only few additional information for evolutionary analyses.
+
+The BppPhySamp programs uses the common options for setting the alphabet, loading the sequences (@ref{Sequences, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/Sequences.html#Sequences}}) and (@ref{Tree, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/Tree.html#Tree}}) and writing the resulting data set (@ref{WritingSequences, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/WritingSequences.html#WritingSequences}}, @ref{WritingTrees, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/WritingTrees.html#WritingTrees}}).
+
+@table @command
+
+@item input.method = @{tree|matrix@}
+The method to provide phylogenetic information, either by a tree or a matrix.
+If the @option{tree} option is used, then the options for reading trees are used (@ref{Tree, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/Tree.html#Tree}}).
+
+@item input.matrix = @{path@} [[input.method = matrix]]
+The input matrix file.
+
+@item deletion_method = @{random|threshold|sample@}
+Method to use to remove sequence. 
+
+@item threshold = @{float>0@} [[deletion_method = threshold ]]
+The minimum distance separating two sequences in the sampled data set.
+Any sequences closer than this threshold in the original data set will be confronted so that only one is kept.
+
+@item sample_size = @{int>0@} [[deletion_method = sample|random ]]
+The number of sequences to keep in the final data set.
+
+@item choice_criterion = @{length|length.complete|random@}
+How to chose between closely related sequences? @option{length} takes the longest (maximum number of non-gap positions), @option{length.complete} takes the sequence with the maximum number of fully resolved positions and @option{random} picks one sequence at random.
+@end table 
 
 @c ------------------------------------------------------------------------------------------------------------------
 
