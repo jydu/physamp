@@ -36,8 +36,8 @@ using namespace std;
 #include <Bpp/Numeric/Random/RandomTools.h>
 
 // From bpp-seq:
-#include <Bpp/Seq/Alphabet.all>
-#include <Bpp/Seq/Container.all>
+#include <Bpp/Seq/Alphabet/AlphabetTools.h>
+#include <Bpp/Seq/Container/SequenceContainerTools.h>
 #include <Bpp/Seq/SiteTools.h>
 #include <Bpp/Seq/App/SequenceApplicationTools.h>
 
