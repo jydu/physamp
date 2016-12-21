@@ -3,18 +3,19 @@
 # Description
 
 The **PhySamp** package currently contains two programs:
+
 * *bppalnoptim* samples a sequence alignment by removing sequences in order to maximize the number of sites suitable for a given analysis. The program has three running modes:
-  * Interactive: the user will be iteratively proposed a set of choices for sequence removal, with their corresponding site gains. The procedure stops when the user does not want to remove more sequences, and the resulting filtered alignment is written.
-  * Automatic: the user enters an a priori criterion for stopping the filtering procedure (for instance a minimum number of sequences to keep).
-  * Diagnostic: this mode allows to plot the trade-off curve, by showing the site gain as a function of the number of removed sequences.
-  The underlying algorithms have been published in *BMC Bioinformatics* (doi: 10.1186/s12859-015-0619-8), please site this reference if you use this program:
+ * Interactive: the user will be iteratively proposed a set of choices for sequence removal, with their corresponding site gains. The procedure stops when the user does not want to remove more sequences, and the resulting filtered alignment is written.
+ * Automatic: the user enters an a priori criterion for stopping the filtering procedure (for instance a minimum number of sequences to keep).
+ * Diagnostic: this mode allows to plot the trade-off curve, by showing the site gain as a function of the number of removed sequences.
+ The underlying algorithms have been published in *BMC Bioinformatics* (doi: 10.1186/s12859-015-0619-8), please site this reference if you use this program:
 > Dutheil JY1,2, Figuet E3.
 > Optimization of sequence alignments according to the number of sequences vs. number of sites trade-off.
 > BMC Bioinformatics. 2015 Jun 9;16:190.
 
 * *bppphysamp* samples a sequence alignment by removing redundant sequences. It uses a phylogenetic tree or a distance matrix as input, and remove sequences based on their similarity. Available options include
-  * remove sequences which are less than X% divergent
-  * keep the X most divergent sequences
+ * remove sequences which are less than X% divergent
+ * keep the X most divergent sequences
 
 
 # Availability
