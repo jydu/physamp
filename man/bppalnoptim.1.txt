@@ -34,4 +34,4 @@ reads a file for loading options
 
 .SH AUTHOR
 
-Julien Dutheil.
+Julien Y. Dutheil.

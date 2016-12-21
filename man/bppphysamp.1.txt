@@ -2,7 +2,7 @@
 
 .SH NAME
 
-bppphysamp - Phylogenetic sampling with Bio++
+bppphysamp - Phylogenetic Sampling
 
 .SH SYNOPSIS
 
@@ -18,7 +18,7 @@ bppphysamp samples a sequence alignment according to a given phylogenetic tree, 
 
 .SH OPTIONS
 
-You should refer to 'info bppsuite' or to the online manual of bppsuite for a complete list of available options.
+You should refer to 'info physamp' or to the online manual of bppsuite for a complete list of available options.
 
 .TP 5
 
@@ -34,4 +34,4 @@ reads a file for loading options
 
 .SH AUTHOR
 
-The Bio++ Development Team.
+Julien Y. Dutheil.
