@@ -93,12 +93,12 @@ IF(INFO)
     ADD_CUSTOM_TARGET(info
       ${ADD_INFO_TO}
       COMMAND ${MAKEINFO_EXE} physamp.texi
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/doc
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/docs
     )
 
     ADD_CUSTOM_TARGET(html
       COMMAND ${MAKEINFO_EXE} --html --css-ref=http://www.w3.org/StyleSheets/Core/Steely physamp.texi
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/doc
+      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/docs
       )
   ELSE(MAKEINFO_EXE)
     MESSAGE(FATAL_ERROR p"Program makeinfo required but not found.")
@@ -112,9 +112,9 @@ IF(PDFTEX_EXE)
 
   ADD_CUSTOM_TARGET(pdf
     COMMAND ${PDFTEX_EXE} physamp.texi
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/doc
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/docs
     )
-  SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "doc/physamp.pdf;doc/physamp.aux;doc/physamp.cp;doc/physamp.fn;doc/physamp.info;doc/physamp.ky;doc/physamp.log;doc/physamp.pg;doc/physamp.toc;doc/physamp.tp;doc/physamp.vr")
+  SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "docs/physamp.pdf;docs/physamp.aux;docs/physamp.cp;docs/physamp.fn;docs/physamp.info;docs/physamp.ky;docs/physamp.log;docs/physamp.pg;docs/physamp.toc;docs/physamp.tp;docs/physamp.vr")
 ENDIF(PDFTEX_EXE)
 
 #here is a useful function:
@@ -165,7 +165,7 @@ IMPROVED_FIND_LIBRARY(LIBS bpp-core Bpp/Clonable.h)
 
 # Subdirectories
 ADD_SUBDIRECTORY(physamp)
-ADD_SUBDIRECTORY(doc)
+ADD_SUBDIRECTORY(docs)
 ADD_SUBDIRECTORY(man)
 
 ENDIF(NO_DEP_CHECK)
@@ -201,24 +201,19 @@ SET(CPACK_SOURCE_IGNORE_FILES
  "bppSuite/\\\\..*"
  "bppSuite/bppphysamp"
  "bppSuite/bppalnoptim"
- "doc/physamp/"
- "doc/physamp\\\\.info"
- "doc/physamp\\\\.toc"
- "doc/physamp\\\\.vr"
- "doc/physamp\\\\.tp"
- "doc/physamp\\\\.log"
- "doc/physamp\\\\.fn"
- "doc/physamp\\\\.ky"
- "doc/physamp\\\\.cp"
- "doc/physamp\\\\.pg"
- "doc/physamp\\\\.aux"
- "doc/physamp\\\\.pdf"
+ "docs/physamp/"
+ "docs/physamp\\\\.info"
+ "docs/physamp\\\\.toc"
+ "docs/physamp\\\\.vr"
+ "docs/physamp\\\\.tp"
+ "docs/physamp\\\\.log"
+ "docs/physamp\\\\.fn"
+ "docs/physamp\\\\.ky"
+ "docs/physamp\\\\.cp"
+ "docs/physamp\\\\.pg"
+ "docs/physamp\\\\.aux"
+ "docs/physamp\\\\.pdf"
  "man/.*\\\\.1.${DOC_COMPRESS_EXT}"
- "debian/tmp"
- "debian/physamp/"
- "debian/physamp\\\\.substvars"
- "debian/physamp\\\\.debhelper"
- "debian/debhelper\\\\.log"
  "install_manifest.txt"
  "DartConfiguration.tcl"
  ${CPACK_SOURCE_IGNORE_FILES}
