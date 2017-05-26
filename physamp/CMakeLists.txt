@@ -3,15 +3,20 @@
 # Created: 24/10/2014
 
 ADD_EXECUTABLE(bppalnoptim AlignmentOptimizer.cpp)
-TARGET_LINK_LIBRARIES(bppalnoptim ${LIBS})
-SET_TARGET_PROPERTIES(bppalnoptim PROPERTIES LINK_SEARCH_END_STATIC ${BUILD_STATIC})
-
 ADD_EXECUTABLE(bppphysamp PhyloSampler.cpp)
-TARGET_LINK_LIBRARIES(bppphysamp ${LIBS})
-SET_TARGET_PROPERTIES(bppphysamp PROPERTIES LINK_SEARCH_END_STATIC ${BUILD_STATIC})
+SET (physamp-targets
+	bppalnoptim
+	bppphysamp
+	)
 
-# Install progs
-INSTALL(TARGETS
-  bppalnoptim
-  bppphysamp
-  DESTINATION bin)
+FOREACH (target ${physamp-targets})
+  # Link (static or shared)
+  IF (BUILD_STATIC)
+    TARGET_LINK_LIBRARIES (${target} ${BPP_LIBS_STATIC})
+    SET_TARGET_PROPERTIES (${target} LINK_SEARCH_END_STATIC TRUE)
+  ELSE (BUILD_STATIC)
+    TARGET_LINK_LIBRARIES (${target} ${BPP_LIBS_SHARED})
+  ENDIF (BUILD_STATIC)
+ENDFOREACH (target)
+
+INSTALL (TARGETS ${physamp-targets} DESTINATION bin)

@@ -14,7 +14,7 @@
 @copying
 This is the manual of the PhySamp package, version 1.0.0.
 
-Copyright @copyright{} 2016 Julien Y. Dutheil
+Copyright @copyright{} 2017 Julien Y. Dutheil
 @end copying
 
 @titlepage
@@ -36,11 +36,11 @@ Copyright @copyright{} 2016 Julien Y. Dutheil
 @top The PhySamp Manual
 
 @insertcopying
-@end ifnottex
 
 @menu
 * Introduction::
 * bppalnoptim::
+* bppphysamp::
 
 @detailmenu
  --- The Detailed Node Listing ---
@@ -56,6 +56,8 @@ Output files
 
 @end detailmenu
 @end menu
+
+@end ifnottex
 
 @c ------------------------------------------------------------------------------------------------------------------
 
@@ -99,7 +101,7 @@ Programs in the PhySamp package follow the @samp{BppO} syntax. They are command 
 
 @c ------------------------------------------------------------------------------------------------------------------
 
-@node bppalnoptim,  , Introduction, Top
+@node bppalnoptim, bppphysamp, Introduction, Top
 @chapter Sampling alignment to maximize the number of sites with minimum coverage
 
 The option files for @sc{bppalnoptim} fall in three sections: input of alignment and guide tree, filter parameters and output files.
@@ -227,7 +229,7 @@ Optionally, the sampled tree can also be written using options from the BppO syn
 * bppphysamp::
 @end menu
 
-@node bppphysamp,  , bppalnoptim, bppalnoptim
+@node bppphysamp,  , bppalnoptim, Top
 @chapter Sampling alignment to remove redundant sequences
  
 The Bio++ Phylogenetic Sampler samples sequences from a file according to phylogenetic information.

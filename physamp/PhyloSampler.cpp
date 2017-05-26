@@ -84,7 +84,7 @@ int main(int args, char ** argv)
 {
   cout << "******************************************************************" << endl;
   cout << "*           Bio++ Phylogenetic Sampler, version 1.0.0.           *" << endl;
-  cout << "* Author: J. Dutheil                        Last Modif. 21/12/16 *" << endl;
+  cout << "* Author: J. Dutheil                        Last Modif. 26/05/17 *" << endl;
   cout << "******************************************************************" << endl;
   cout << endl;
   
