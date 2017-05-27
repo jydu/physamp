@@ -10,7 +10,7 @@ Version: %{_version}
 Release: %{_release}
 License: GPL-3.0
 Vendor: Julien Dutheil
-Source: https://github.com/jydu/comap/archive/v${_version}.tar.gz
+Source: %{_basename}-%{_version}.tar.gz
 Summary: The PhySamp package
 Group: Productivity/Scientific/Other
 
