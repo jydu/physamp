@@ -19,4 +19,4 @@ FOREACH (target ${physamp-targets})
   ENDIF (BUILD_STATIC)
 ENDFOREACH (target)
 
-INSTALL (TARGETS ${physamp-targets} DESTINATION bin)
+INSTALL (TARGETS ${physamp-targets} DESTINATION ${CMAKE_INSTALL_BINDIR})

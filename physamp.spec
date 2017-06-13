@@ -1,9 +1,9 @@
 %define _basename physamp
-%define _version 1.0.0
+%define _version 1.0.1
 %define _release 1
 %define _prefix /usr
 
-URL: http://home.gna.org/comap/
+URL: https://github.com/jydu/maffilter
 
 Name: %{_basename}
 Version: %{_version}
@@ -14,21 +14,21 @@ Source: %{_basename}-%{_version}.tar.gz
 Summary: The PhySamp package
 Group: Productivity/Scientific/Other
 
-Requires: libbpp-phyl9 = 2.3.0
-Requires: libbpp-seq9 = 2.3.0
-Requires: libbpp-core2 = 2.3.0
+Requires: libbpp-phyl11 = 2.3.1
+Requires: libbpp-seq11 = 2.3.1
+Requires: libbpp-core3 = 2.3.1
 
 BuildRoot: %{_builddir}/%{_basename}-root
 BuildRequires: cmake >= 2.8.11
 BuildRequires: gcc-c++ >= 4.7.0
 BuildRequires: groff
 BuildRequires: texinfo >= 4.0.0
-BuildRequires: libbpp-core2 = 2.3.0
-BuildRequires: libbpp-core-devel = 2.3.0
-BuildRequires: libbpp-seq9 = 2.3.0
-BuildRequires: libbpp-seq-devel = 2.3.0
-BuildRequires: libbpp-phyl9 = 2.3.0
-BuildRequires: libbpp-phyl-devel = 2.3.0
+BuildRequires: libbpp-core3 = 2.3.1
+BuildRequires: libbpp-core-devel = 2.3.1
+BuildRequires: libbpp-seq11 = 2.3.1
+BuildRequires: libbpp-seq-devel = 2.3.1
+BuildRequires: libbpp-phyl11 = 2.3.1
+BuildRequires: libbpp-phyl-devel = 2.3.1
 
 
 AutoReq: yes
@@ -55,21 +55,10 @@ Includes programs:
 %setup -q
 
 %build
-CFLAGS="-I%{_prefix}/include $RPM_OPT_FLAGS"
-CMAKE_FLAGS="-DCMAKE_INSTALL_PREFIX=%{_prefix}"
-if [ %{_lib} == 'lib64' ] ; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DLIB_SUFFIX=64"
-fi
-if [ %{zipext} == 'lzma' ] ; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DDOC_COMPRESS=lzma -DDOC_COMPRESS_EXT=lzma"
-fi
-if [ %{zipext} == 'xz' ] ; then
-  CMAKE_FLAGS="$CMAKE_FLAGS -DDOC_COMPRESS=xz -DDOC_COMPRESS_EXT=xz"
-fi
-
+CFLAGS="$RPM_OPT_FLAGS"
+CMAKE_FLAGS="-DCMAKE_INSTALL_PREFIX=%{_prefix} -DCOMPRESS_PROGRAM=%{compress_program}"
 cmake $CMAKE_FLAGS .
 make
-make info
 
 %install
 make DESTDIR=$RPM_BUILD_ROOT install
@@ -86,11 +75,13 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS LICENSE INSTALL ChangeLog
 %{_prefix}/bin/bppalnoptim
 %{_prefix}/bin/bppphysamp
-%{_prefix}/share/info/physamp.info.%{zipext}
-%{_prefix}/share/man/man1/bppalnoptim.1.%{zipext}
-%{_prefix}/share/man/man1/bppphysamp.1.%{zipext}
+%{_prefix}/share/info/physamp.info.*
+%{_prefix}/share/man/man1/bppalnoptim.1.*
+%{_prefix}/share/man/man1/bppphysamp.1.*
 
 %changelog
+* Tue Jun 06 2017 Julien Dutheil <dutheil@evolbio.mpg.de> 1.0.1-1
+- Compatibility update with Bio++ 2.3.1
 * Fri May 26 2017 Julien Dutheil <dutheil@evolbio.mpg.de> 1.0.0-1
 - Initial release
 
