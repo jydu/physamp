@@ -377,6 +377,7 @@ AlignmentPartitionScores2& gapOptimizerDownstreamUpdate2(const Node& node, const
 
 class Selector {
   public:
+    virtual ~Selector() {}
     virtual size_t getSelection(size_t nbChoices) const = 0;
 };
 
@@ -400,8 +401,8 @@ class InputSelector: public Selector {
 int main(int args, char ** argv)
 {
   cout << "******************************************************************" << endl;
-  cout << "*           Bio++ Alignment Optimizer, version 1.0.1.            *" << endl;
-  cout << "* Author: J. Dutheil                        Last Modif. 09/06/17 *" << endl;
+  cout << "*           Bio++ Alignment Optimizer, version 1.0.2.            *" << endl;
+  cout << "* Author: J. Dutheil                        Last Modif. 20/07/17 *" << endl;
   cout << "*         E. Figuet                                              *" << endl;
   cout << "******************************************************************" << endl;
   cout << endl;
@@ -418,8 +419,8 @@ int main(int args, char ** argv)
   bppalnoptim.startTimer();
 
   //Get sequences:
-  auto_ptr<Alphabet> alphabet(SequenceApplicationTools::getAlphabet(bppalnoptim.getParams()));
-  auto_ptr<SiteContainer> sites(SequenceApplicationTools::getSiteContainer(alphabet.get(), bppalnoptim.getParams()));
+  unique_ptr<Alphabet> alphabet(SequenceApplicationTools::getAlphabet(bppalnoptim.getParams()));
+  unique_ptr<SiteContainer> sites(SequenceApplicationTools::getSiteContainer(alphabet.get(), bppalnoptim.getParams()));
 
   //Get options:
   double threshold = ApplicationTools::getDoubleParameter("threshold", bppalnoptim.getParams(), 0.5, "", true, 1);
@@ -438,7 +439,7 @@ int main(int args, char ** argv)
   AlignedSequenceContainer refAln(alphabet.get());
   for (size_t i = 0; i < nbSequencesRef; ++i) {
     try {
-      auto_ptr<Sequence> seq(sites->removeSequence(refSequencesNames[i]));
+      unique_ptr<Sequence> seq(sites->removeSequence(refSequencesNames[i]));
       refAln.addSequence(*seq);
     } catch(SequenceNotFoundException) {
       throw Exception("No sequence with name '" + refSequencesNames[i] + "' was found in the input alignment.");
@@ -457,8 +458,8 @@ int main(int args, char ** argv)
   }
 
   //Get tree:
-  auto_ptr< TreeTemplate<Node> > tree;
-  auto_ptr< TreeTemplate<Node> > origTree;
+  unique_ptr< TreeTemplate<Node> > tree;
+  unique_ptr< TreeTemplate<Node> > origTree;
   
   //input or cluster:
   string inputTree = ApplicationTools::getStringParameter("input.tree.method", bppalnoptim.getParams(), "AutoCluster", "", false, 1);
@@ -556,7 +557,7 @@ int main(int args, char ** argv)
 
   //We try to maximize the number of sites while removing the minimum number of sequences
   size_t nbDisplay = 1;
-  auto_ptr<Selector> selector;
+  unique_ptr<Selector> selector;
   unsigned int minNbSequences = 0;
   unsigned int minNbSitesRequired = static_cast<unsigned int>(sites->getNumberOfSites()) + 1;
   if (methodName == "Auto" || methodName == "Diagnostic") {
@@ -584,7 +585,7 @@ int main(int args, char ** argv)
   if (minNbSitesRequired <= static_cast<unsigned int>(sites->getNumberOfSites()))
     ApplicationTools::displayResult("Stop when this number of sites is reached", minNbSitesRequired);
 
-  auto_ptr<Comparator> comp;
+  unique_ptr<Comparator> comp;
   string compCrit = ApplicationTools::getStringParameter("comparison", bppalnoptim.getParams(), "MaxSites", "", false, 1);
   if (compCrit == "MaxSites") {
     comp.reset(new Comparator('a'));
