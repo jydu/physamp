@@ -1,1 +1,5 @@
 theme: jekyll-theme-slate
+title: PhySamp
+description: Phylogenetic Sampling and Optimization of Sequence Alignments
+show_downloads: true
+share: true
