@@ -401,8 +401,8 @@ class InputSelector: public Selector {
 int main(int args, char ** argv)
 {
   cout << "******************************************************************" << endl;
-  cout << "*           Bio++ Alignment Optimizer, version 1.0.2.            *" << endl;
-  cout << "* Author: J. Dutheil                        Last Modif. 20/07/17 *" << endl;
+  cout << "*           Bio++ Alignment Optimizer, version 1.1.0.            *" << endl;
+  cout << "* Author: J. Dutheil                        Last Modif. 14/03/18 *" << endl;
   cout << "*         E. Figuet                                              *" << endl;
   cout << "******************************************************************" << endl;
   cout << endl;
