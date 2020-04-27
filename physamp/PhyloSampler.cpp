@@ -119,7 +119,7 @@ int main(int args, char ** argv)
   {
     string distPath = ApplicationTools::getAFilePath("input.matrix", bppphysamp.getParams(), true, true);
     PhylipDistanceMatrixFormat matIO;
-    dist.reset(matIO.read(distPath));
+    dist.reset(matIO.readDistanceMatrix(distPath));
   }
   else throw Exception("Unknown input method: " + inputMethod);
 
