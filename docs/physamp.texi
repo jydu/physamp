@@ -135,6 +135,8 @@ The minimum coverage for a site to be included in the analysis. A threshold of 0
 One of three possible running modes, which are detailed below.
 @item comparison = @{MaxSites|MaxChars@}
 Criterion to compare sequences subsets. @command{MaxSites} will maximize the number of sites with minimal coverage (default), while @command{MaxChars} will maximize the amount of data (number of sequences * number of sites).
+@item reference.sequences = @{comma-separated list of sequence names@}
+A list of sequence names to be considered as reference. These sequences will be always included in the selection and therefore never be discarded.
 @end table
 
 Here comes a description of the three running modes:
