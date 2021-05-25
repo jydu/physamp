@@ -129,6 +129,13 @@ int main(int args, char ** argv)
   string critMeth = ApplicationTools::getStringParameter("choice_criterion", bppphysamp.getParams(), "length");
   ApplicationTools::displayResult("Sequence choice criterion", critMeth);
 
+  string logFilePath = ApplicationTools::getAFilePath("log_file", bppphysamp.getParams(), true, false);
+  ApplicationTools::displayResult("Log file", logFilePath);
+  unique_ptr<ofstream> logFile = nullptr;
+  if (TextTools::toLower(logFilePath) != "none") {
+    logFile.reset(new ofstream(logFilePath, ios::out));
+  }
+
   //Compute lengths:
   vector<string> seqNames;
   vector<size_t> seqLen(dist->size());
@@ -172,19 +179,34 @@ int main(int args, char ** argv)
     double threshold = ApplicationTools::getDoubleParameter("threshold", bppphysamp.getParams(), 0.01);
     ApplicationTools::displayResult("Distance threshold", threshold);
 
+    if (logFile) {
+      *logFile << "Discarded\tFor\tReason" << endl;
+    }
+
     unsigned int rm = 0;
+    unsigned int kp = 0;
     while (distances[0].distance <= threshold)
     {
       //We need to chose between the two sequences:
       if (critMeth == "length" || critMeth == "length.complete")
       {
-        if (seqLen[distances[0].i1] > seqLen[distances[0].i2]) rm = distances[0].i2;
-        else rm = distances[0].i1;
+        if (seqLen[distances[0].i1] > seqLen[distances[0].i2]) {
+	  kp = distances[0].i1;
+	  rm = distances[0].i2;
+	} else {
+	  rm = distances[0].i1;
+	  kp = distances[0].i2;
+	}
       }
       else if (critMeth == "random")
       {
-        if (RandomTools::flipCoin()) rm = distances[0].i2;
-        else rm = distances[0].i1;
+        if (RandomTools::flipCoin()) {
+	  kp = distances[0].i1;
+	  rm = distances[0].i2;
+	} else {
+	  rm = distances[0].i1;
+	  kp = distances[0].i2;
+	}
       }
       else throw Exception("Unknown criterion: " + critMeth);
 
@@ -197,6 +219,11 @@ int main(int args, char ** argv)
       remove_if(distances.begin(), distances.end(), Test(rm));
       if (distances.size() == 0)
         throw Exception("Error, all sequences have been removed with this criterion!");
+
+      //Write to log:
+      if (logFile) {
+        *logFile << dist->getName(rm) << "\t" << dist->getName(kp) << "\t" << critMeth << endl;
+      }
     }
     ApplicationTools::displayResult("Number of sequences kept:", seqNames.size());
   }
@@ -205,19 +232,34 @@ int main(int args, char ** argv)
     unsigned int sampleSize = ApplicationTools::getParameter<unsigned int>("sample_size", bppphysamp.getParams(), 10);
     ApplicationTools::displayResult("Sample size", sampleSize);
     
+    if (logFile) {
+      *logFile << "Discarded\tFor\tReason" << endl;
+    }
+
     unsigned int rm = 0;
+    unsigned int kp = 0;
     while (seqNames.size() > sampleSize)
     {
       //We need to chose between the two sequences:
       if (critMeth == "length" || critMeth == "length.complete")
       {
-        if (seqLen[distances[0].i1] > seqLen[distances[0].i2]) rm = distances[0].i2;
-        else rm = distances[0].i1;
+        if (seqLen[distances[0].i1] > seqLen[distances[0].i2]) {
+	  kp = distances[0].i1;
+	  rm = distances[0].i2;
+	} else {
+	  rm = distances[0].i1;
+	  kp = distances[0].i2;
+	}
       }
       else if (critMeth == "random")
       {
-        if (RandomTools::flipCoin()) rm = distances[0].i2;
-        else rm = distances[0].i1;
+        if (RandomTools::flipCoin()) {
+	  kp = distances[0].i1;
+	  rm = distances[0].i2;
+	} else {
+	  rm = distances[0].i1;
+	  kp = distances[0].i2;
+	}
       }
       else throw Exception("Unknown criterion: " + critMeth);
 
@@ -228,6 +270,11 @@ int main(int args, char ** argv)
         
       //Ignore all distances from this sequence:
       remove_if(distances.begin(), distances.end(), Test(rm));
+
+      //Write to log:
+      if (logFile) {
+        *logFile << dist->getName(rm) << "\t" << dist->getName(kp) << "\t" << critMeth << endl;
+      }
     }
     ApplicationTools::displayResult("Minimal distance in final data set:", distances[0].distance);
   }
