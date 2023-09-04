@@ -52,3 +52,6 @@ output.tree.file=$(DATA).$(TYPE).dnd
 
 # Ouput format:
 output.tree.format=Newick
+
+log_file=$(DATA).$(TYPE).log
+

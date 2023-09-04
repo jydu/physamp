@@ -37,12 +37,13 @@ using namespace std;
 
 // From bpp-seq:
 #include <Bpp/Seq/Alphabet/AlphabetTools.h>
+#include <Bpp/Seq/Container/VectorSiteContainer.h>
 #include <Bpp/Seq/Container/SequenceContainerTools.h>
 #include <Bpp/Seq/SiteTools.h>
 #include <Bpp/Seq/App/SequenceApplicationTools.h>
 
 // From bpp-phyl:
-#include <Bpp/Phyl/TreeTemplate.h>
+#include <Bpp/Phyl/Tree/TreeTemplate.h>
 #include <Bpp/Phyl/Distance/HierarchicalClustering.h>
 #include <Bpp/Phyl/App/PhylogeneticsApplicationTools.h>
 
@@ -62,7 +63,7 @@ void help()
 double overlapDistance(const Sequence& seq1, const Sequence& seq2) {
   //double n1 = 0, n2 = 0, n12 = 0;
   double n12 = 0;
-  const Alphabet* a = seq1.getAlphabet();
+  auto a = seq1.getAlphabet();
   for (size_t i = 0; i < seq1.size(); ++i) {
     //if (!a->isGap(seq1[i])) n1++;
     //if (!a->isGap(seq2[i])) n2++;
@@ -198,12 +199,12 @@ class Comparator {
 };
 
 
-#define Index2 map<int, AlignmentPartitionScores2>
+using Index2 = map<int, AlignmentPartitionScores2>;
 
 // Recursive function.
 // This will initialize the scores map and set the down variables.
 // For convenience, we return the scores for the root subtree.
-AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterGaps, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
+AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, const SiteContainerInterface& sites, Index2& scores, double threshold, bool filterGaps, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   AlignmentPartitionScores2& nodeScores = scores[node.getId()]; //This eventually creates scores for this node.
   size_t nbSites = sites.getNumberOfSites();
@@ -215,7 +216,7 @@ AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, con
   //We distinguish two cases, whether the node is a leaf or an inner node:
   if (node.isLeaf()) {
     //This is a leaf, we initialize arrays from the sequence data.
-    const Sequence& seq = sites.getSequence(node.getName()); //We assume that the alignment contains all leaves of the tree.
+    const auto& seq = sites.sequence(node.getName()); //We assume that the alignment contains all leaves of the tree.
     //This one at least is trivial:
     nodeScores.nbSequencesDown = 1;
     //Now we need to initialize the bit vector and count sites:
@@ -251,7 +252,7 @@ AlignmentPartitionScores2& gapOptimizerFirstTreeTraversal2(const Node& node, con
 // Recursive function.
 // This will initialize the scores map and set the up variables.
 // This must be ran after the first tree traversal, so that all scores are already initialized.
-void gapOptimizerSecondTreeTraversal2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, const vector<unsigned int>& reference, size_t nbSequencesRef)
+void gapOptimizerSecondTreeTraversal2(const Node& node, const SiteContainerInterface& sites, Index2& scores, double threshold, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   AlignmentPartitionScores2& nodeScores = scores[node.getId()]; //This was created during the first pass.
   size_t nbSites = sites.getNumberOfSites();
@@ -294,7 +295,7 @@ void gapOptimizerSecondTreeTraversal2(const Node& node, const SiteContainer& sit
 }
 
 // Update function.
-void gapOptimizerUpstreamUpdate2(const Node& node, const Node* from, const SiteContainer& sites, Index2& scores, double threshold, const vector<unsigned int>& reference, size_t nbSequencesRef)
+void gapOptimizerUpstreamUpdate2(const Node& node, const Node* from, const SiteContainerInterface& sites, Index2& scores, double threshold, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   if (!node.isLeaf()) {
     size_t nbSites = sites.getNumberOfSites();
@@ -328,7 +329,7 @@ void gapOptimizerUpstreamUpdate2(const Node& node, const Node* from, const SiteC
   if (node.hasFather()) gapOptimizerUpstreamUpdate2(*node.getFather(), &node, sites, scores, threshold, reference, nbSequencesRef);
 }
 
-AlignmentPartitionScores2& gapOptimizerDownstreamUpdate2(const Node& node, const SiteContainer& sites, Index2& scores, double threshold, bool filterGaps, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
+AlignmentPartitionScores2& gapOptimizerDownstreamUpdate2(const Node& node, const SiteContainerInterface& sites, Index2& scores, double threshold, bool filterGaps, bool filterUnresolved, const vector<unsigned int>& reference, size_t nbSequencesRef)
 {
   AlignmentPartitionScores2& nodeScores = scores[node.getId()]; //This eventually creates scores for this node.
   size_t nbSites = sites.getNumberOfSites();
@@ -340,7 +341,7 @@ AlignmentPartitionScores2& gapOptimizerDownstreamUpdate2(const Node& node, const
   //We distinguish two cases, whether the node is a leaf or an inner node:
   if (node.isLeaf()) {
     //This is a leaf, we initialize arrays from the sequence data.
-    const Sequence& seq = sites.getSequence(node.getName()); //We assume that the alignment contains all leaves of the tree.
+    const auto& seq = sites.sequence(node.getName()); //We assume that the alignment contains all leaves of the tree.
     //This one at least is trivial:
     nodeScores.nbSequencesDown = 1;
     //Now we need to initialize the bit vector and count sites:
@@ -401,8 +402,8 @@ class InputSelector: public Selector {
 int main(int args, char ** argv)
 {
   cout << "******************************************************************" << endl;
-  cout << "*           Bio++ Alignment Optimizer, version 1.1.0.            *" << endl;
-  cout << "* Author: J. Dutheil                        Last Modif. 14/03/18 *" << endl;
+  cout << "*           Bio++ Alignment Optimizer, version 1.2.0.            *" << endl;
+  cout << "* Author: J. Dutheil                        Last Modif. 04/09/23 *" << endl;
   cout << "*         E. Figuet                                              *" << endl;
   cout << "******************************************************************" << endl;
   cout << endl;
@@ -419,8 +420,8 @@ int main(int args, char ** argv)
   bppalnoptim.startTimer();
 
   //Get sequences:
-  unique_ptr<Alphabet> alphabet(SequenceApplicationTools::getAlphabet(bppalnoptim.getParams()));
-  unique_ptr<SiteContainer> sites(SequenceApplicationTools::getSiteContainer(alphabet.get(), bppalnoptim.getParams()));
+  shared_ptr<const Alphabet> alphabet = SequenceApplicationTools::getAlphabet(bppalnoptim.getParams());
+  unique_ptr<SiteContainerInterface> sites = SequenceApplicationTools::getSiteContainer(alphabet, bppalnoptim.getParams());
 
   //Get options:
   double threshold = ApplicationTools::getDoubleParameter("threshold", bppalnoptim.getParams(), 0.5, "", true, 1);
@@ -436,12 +437,12 @@ int main(int args, char ** argv)
   vector<string> refSequencesNames = ApplicationTools::getVectorParameter<string>("reference.sequences", bppalnoptim.getParams(), ',', "", "", true, 1);
   size_t nbSequencesRef = refSequencesNames.size();
   ApplicationTools::displayResult("Number of reference sequences", nbSequencesRef);
-  AlignedSequenceContainer refAln(alphabet.get());
+  AlignedSequenceContainer refAln(alphabet);
   for (size_t i = 0; i < nbSequencesRef; ++i) {
     try {
-      unique_ptr<Sequence> seq(sites->removeSequence(refSequencesNames[i]));
-      refAln.addSequence(*seq);
-    } catch(SequenceNotFoundException) {
+      auto seq = sites->removeSequence(refSequencesNames[i]);
+      refAln.addSequence(refSequencesNames[i], seq);
+    } catch(SequenceNotFoundException& ex) {
       throw Exception("No sequence with name '" + refSequencesNames[i] + "' was found in the input alignment.");
     }
   }
@@ -450,7 +451,7 @@ int main(int args, char ** argv)
   ApplicationTools::displayResult("Total number of sites", totalNbSites);
   vector<unsigned int> reference(totalNbSites, 0);
   for (size_t i = 0; i < nbSequencesRef; ++i) {
-    const Sequence& seq = refAln.getSequence(i);
+    const auto& seq = refAln.sequence(i);
     for (size_t j = 0; j < totalNbSites; ++j) {
       if (!((filterGaps && alphabet->isGap(seq[j])) || (filterUnresolved && alphabet->isUnresolved(seq[j]))))
         reference[j]++;
@@ -458,8 +459,8 @@ int main(int args, char ** argv)
   }
 
   //Get tree:
-  unique_ptr< TreeTemplate<Node> > tree;
-  unique_ptr< TreeTemplate<Node> > origTree;
+  unique_ptr<TreeTemplate<Node>> tree;
+  unique_ptr<TreeTemplate<Node>> origTree;
   
   //input or cluster:
   string inputTree = ApplicationTools::getStringParameter("input.tree.method", bppalnoptim.getParams(), "AutoCluster", "", false, 1);
@@ -476,7 +477,7 @@ int main(int args, char ** argv)
     ApplicationTools::displayTask("Compressing sequences", true);
     for (size_t i = 0; i < n; ++i) {
       ApplicationTools::displayGauge(i, n - 1);
-      const Sequence& seq = sites->getSequence(i);
+      const auto& seq = sites->sequence(i);
       cseqs[i].resize(ns);
       for (size_t j = 0; j < ns; ++j)
         cseqs[i][j] = !alphabet->isGap(seq[j]);
@@ -486,7 +487,7 @@ int main(int args, char ** argv)
     size_t totmem = (sizeof(vector< vector<double> >) + (sizeof(vector<double>) + sizeof(double) * n) * n) / 1024 / 1024;
     ApplicationTools::displayResult("Memory required to store distances (Mb)", totmem);
     ApplicationTools::displayTask("Computing pairwise overlap matrix", true);
-    DistanceMatrix d(sites->getSequencesNames());
+    DistanceMatrix d(sites->getSequenceNames());
     size_t k = 0, m = n * (n - 1) / 2;
     for (size_t i = 1; i < n; ++i) {
       d(i, i) = 0.;
@@ -513,11 +514,12 @@ int main(int args, char ** argv)
     ApplicationTools::displayResult("Clustering linkage mode", linkage);
     ApplicationTools::displayTask("Computing cluster tree", true);
     HierarchicalClustering hclust(linkMode, d, true);
-    tree.reset(hclust.getTree());
+    tree = make_unique<TreeTemplate<Node>>(hclust.tree());
     tree->unroot();
     ApplicationTools::displayTaskDone();
   } else if (inputTreeName == "File") {
-    tree.reset(dynamic_cast<TreeTemplate<Node> *>(PhylogeneticsApplicationTools::getTree(bppalnoptim.getParams())));
+    auto tmpTree = PhylogeneticsApplicationTools::getTree(bppalnoptim.getParams());
+    tree = make_unique<TreeTemplate<Node>>(*tmpTree);
     if (tree->isRooted()) {
       ApplicationTools::displayWarning("Tree has been unrooted.");
       tree->unroot();
@@ -533,11 +535,12 @@ int main(int args, char ** argv)
   }
   //Reorder the alignment according to tree and use sequence storage instead of site storage (more efficient);
   vector<string> leafNames = tree->getLeavesNames();
-  AlignedSequenceContainer* asc = new AlignedSequenceContainer(alphabet.get());
+  auto asc = make_unique<AlignedSequenceContainer>(alphabet);
   for (size_t i = 0; i < leafNames.size(); ++i) {
-    asc->addSequence(sites->getSequence(leafNames[i]));
+    auto seq = make_unique<Sequence>(sites->sequence(leafNames[i]));
+    asc->addSequence(leafNames[i], seq);
   }
-  sites.reset(asc);
+  sites = move(asc);
 
   //The main loop:
   string logPath = ApplicationTools::getAFilePath("output.log", bppalnoptim.getParams(), false, false, "", true, "bppalnoptim.log", 1);
@@ -601,7 +604,7 @@ int main(int args, char ** argv)
   vector<string> removedSequenceNames;
   double meanE = 0;
   for (size_t i = 0; i < sites->getNumberOfSites(); ++i) {
-    meanE += SiteTools::variabilityShannon(sites->getSite(i), false);
+    meanE += SiteTools::variabilityShannon(sites->site(i), false);
   }
   meanE /= static_cast<double>(sites->getNumberOfSites());
   logfile << "0\t0\t" << tree->getRootId() << "\t" << indexedScores[tree->getRootId()].nbSequencesDown << "\t0\t" << indexedScores[tree->getRootId()].nbSitesDown << "\t0\t" << indexedScores[tree->getRootId()].nbCharsDown << "\t0\t" << meanE << endl;
@@ -728,7 +731,7 @@ int main(int args, char ** argv)
       //Compute entropy:
       meanE = 0;
       for (size_t i = 0; i < sites->getNumberOfSites(); ++i) {
-        meanE += SiteTools::variabilityShannon(sites->getSite(i), false);
+        meanE += SiteTools::variabilityShannon(sites->site(i), false);
       }
       meanE /= static_cast<double>(sites->getNumberOfSites()); 
       

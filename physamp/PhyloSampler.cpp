@@ -40,7 +40,7 @@ using namespace std;
 #include <Bpp/Seq/App/SequenceApplicationTools.h>
 
 // From bpp-phyl:
-#include <Bpp/Phyl/Tree.h>
+#include <Bpp/Phyl/Tree/Tree.h>
 #include <Bpp/Phyl/App/PhylogeneticsApplicationTools.h>
 #include <Bpp/Phyl/Io/PhylipDistanceMatrixFormat.h>
 
@@ -83,8 +83,8 @@ class Test {
 int main(int args, char ** argv)
 {
   cout << "******************************************************************" << endl;
-  cout << "*           Bio++ Phylogenetic Sampler, version 1.1.0.           *" << endl;
-  cout << "* Author: J. Dutheil                        Last Modif. 14/03/18 *" << endl;
+  cout << "*           Bio++ Phylogenetic Sampler, version 1.2.0.           *" << endl;
+  cout << "* Author: J. Dutheil                        Last Modif. 04/09/23 *" << endl;
   cout << "******************************************************************" << endl;
   cout << endl;
   
@@ -100,18 +100,19 @@ int main(int args, char ** argv)
   bppphysamp.startTimer();
 
   //Get sequences:
-  Alphabet* alphabet      = SequenceApplicationTools::getAlphabet(bppphysamp.getParams());
-  SequenceContainer* seqs = SequenceApplicationTools::getSequenceContainer(alphabet, bppphysamp.getParams());
+  shared_ptr<const Alphabet> alphabet = SequenceApplicationTools::getAlphabet(bppphysamp.getParams());
+  auto seqs = SequenceApplicationTools::getSequenceContainer(alphabet, bppphysamp.getParams());
 
   string inputMethod = ApplicationTools::getStringParameter("input.method", bppphysamp.getParams(), "tree");
   ApplicationTools::displayResult("Input method", inputMethod);
 
-  unique_ptr< DistanceMatrix > dist;
-  unique_ptr< TreeTemplate<Node> > tree;
-  if(inputMethod == "tree")
+  unique_ptr<DistanceMatrix> dist;
+  unique_ptr<TreeTemplate<Node>> tree;
+  if (inputMethod == "tree")
   {
-    tree.reset(dynamic_cast<TreeTemplate<Node> *>(PhylogeneticsApplicationTools::getTree(bppphysamp.getParams())));
-    dist.reset(TreeTemplateTools::getDistanceMatrix(*tree));
+    auto tmpTree = PhylogeneticsApplicationTools::getTree(bppphysamp.getParams());
+    tree = make_unique<TreeTemplate<Node>>(*tmpTree);
+    dist = TreeTemplateTools::getDistanceMatrix(*tree);
     //PhylipDistanceMatrixFormat matIO;
     //matIO.write(*dist.get(), "matrix.txt");
   }
@@ -119,7 +120,7 @@ int main(int args, char ** argv)
   {
     string distPath = ApplicationTools::getAFilePath("input.matrix", bppphysamp.getParams(), true, true);
     PhylipDistanceMatrixFormat matIO;
-    dist.reset(matIO.readDistanceMatrix(distPath));
+    dist = matIO.readDistanceMatrix(distPath);
   }
   else throw Exception("Unknown input method: " + inputMethod);
 
@@ -144,9 +145,9 @@ int main(int args, char ** argv)
   {
     name = dist->getName(i);
     if (critMeth == "length.complete")
-      seqLen[i] = SequenceTools::getNumberOfCompleteSites(seqs->getSequence(name));
+      seqLen[i] = SequenceTools::getNumberOfCompleteSites(seqs->sequence(name));
     else
-      seqLen[i] = SequenceTools::getNumberOfSites(seqs->getSequence(name));
+      seqLen[i] = SequenceTools::getNumberOfSites(seqs->sequence(name));
     seqNames.push_back(name);
   }
 
@@ -282,14 +283,16 @@ int main(int args, char ** argv)
 
   //Write sequences to file:
   AlignedSequenceContainer asc(alphabet);
-  for (size_t i = 0; i < seqNames.size(); i++)
-    asc.addSequence(seqs->getSequence(seqNames[i]));
+  for (size_t i = 0; i < seqNames.size(); i++) {
+    auto seq = make_unique<Sequence>(seqs->sequence(seqNames[i]));
+    asc.addSequence(seqNames[i], seq);
+  }
    
   SequenceApplicationTools::writeAlignmentFile(asc, bppphysamp.getParams());
 
   //Write tree file:
   if (ApplicationTools::getStringParameter("output.tree.file", bppphysamp.getParams(), "None") != "None") {
-    vector<string> allSeqNames(seqs->getSequencesNames());
+    vector<string> allSeqNames(seqs->getSequenceNames());
     vector<string> removedSeqNames;
     VectorTools::diff(allSeqNames, seqNames, removedSeqNames);
     for (size_t i = 0; i < removedSeqNames.size(); ++i) {

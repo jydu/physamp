@@ -1,7 +1,8 @@
 #! /bin/sh
 arch=`uname -m`
-version=0.2.0-1
+version=1.1.0-1
 
 strip physamp/bppalnoptim
-tar cvzf physamp-${arch}-bin-static-${version}.tar.gz physamp/bppalnoptim
+strip physamp/bppphysamp
+tar cvzf physamp-${arch}-bin-static-${version}.tar.gz physamp/bppalnoptim physamp/bppphysamp
 
