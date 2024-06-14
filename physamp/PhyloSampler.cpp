@@ -38,11 +38,11 @@ using namespace std;
 #include <Bpp/Seq/SiteTools.h>
 #include <Bpp/Seq/SequenceTools.h>
 #include <Bpp/Seq/App/SequenceApplicationTools.h>
+#include <Bpp/Seq/Io/PhylipDistanceMatrixFormat.h>
 
 // From bpp-phyl:
 #include <Bpp/Phyl/Tree/Tree.h>
 #include <Bpp/Phyl/App/PhylogeneticsApplicationTools.h>
-#include <Bpp/Phyl/Io/PhylipDistanceMatrixFormat.h>
 
 using namespace bpp;
 
@@ -217,7 +217,7 @@ int main(int args, char ** argv)
       seqNames.erase(seqNames.begin() + static_cast<ptrdiff_t>(pos)); 
         
       //Ignore all distances from this sequence:
-      remove_if(distances.begin(), distances.end(), Test(rm));
+      distances.erase(remove_if(distances.begin(), distances.end(), Test(rm)), distances.end());
       if (distances.size() == 0)
         throw Exception("Error, all sequences have been removed with this criterion!");
 
@@ -270,7 +270,7 @@ int main(int args, char ** argv)
       seqNames.erase(seqNames.begin() + static_cast<ptrdiff_t>(pos)); 
         
       //Ignore all distances from this sequence:
-      remove_if(distances.begin(), distances.end(), Test(rm));
+      distances.erase(remove_if(distances.begin(), distances.end(), Test(rm)), distances.end());
 
       //Write to log:
       if (logFile) {

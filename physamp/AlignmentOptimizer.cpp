@@ -540,7 +540,7 @@ int main(int args, char ** argv)
     auto seq = make_unique<Sequence>(sites->sequence(leafNames[i]));
     asc->addSequence(leafNames[i], seq);
   }
-  sites = move(asc);
+  sites = std::move(asc);
 
   //The main loop:
   string logPath = ApplicationTools::getAFilePath("output.log", bppalnoptim.getParams(), false, false, "", true, "bppalnoptim.log", 1);

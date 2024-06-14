@@ -3,7 +3,7 @@
 # Created: 24/10/2014
 
 # Global parameters
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.11)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5.0)
 PROJECT(physamp CXX)
 
 # Compile options
@@ -22,7 +22,7 @@ IF(NOT NO_DEP_CHECK)
 ENDIF(NOT NO_DEP_CHECK)
 
 IF(NO_DEP_CHECK)
-  MESSAGE("-- Dependencies checking disabled. Only distribution can be built.")
+  MESSAGE(STATUS "Dependencies checking disabled. Only distribution can be built.")
 ELSE(NO_DEP_CHECK)
 
 #static linkage?
@@ -32,7 +32,7 @@ IF(NOT BUILD_STATIC)
       FORCE)
 ENDIF()
 IF(BUILD_STATIC)
-  MESSAGE("-- Static linkage requested.")
+  MESSAGE(STATUS "Static linkage requested.")
   SET(CMAKE_CXX_FLAGS "-static -static-libgcc -static-libstdc++ ${CMAKE_CXX_FLAGS}")
 ENDIF()
 
@@ -111,15 +111,3 @@ INCLUDE(CPack)
 #This adds the 'dist' target
 ADD_CUSTOM_TARGET(dist COMMAND ${CMAKE_MAKE_PROGRAM} package_source)
 
-IF(NOT NO_DEP_CHECK)
-IF (UNIX)
-
-#This creates rpm packages:
-ADD_CUSTOM_TARGET(rpm rpmbuild -ta ${CPACK_SOURCE_PACKAGE_FILE_NAME}.tar.gz)
-ADD_DEPENDENCIES(rpm dist info man)
-
-#ADD_DEPENDENCIES(info install)
-
-ENDIF(UNIX)
-
-ENDIF(NOT NO_DEP_CHECK)
