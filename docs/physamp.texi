@@ -15,7 +15,7 @@
 @copying
 This is the manual of the PhySamp package, version 1.1.0.
 
-Copyright @copyright{} 2018 Julien Y. Dutheil
+Copyright @copyright{} 2026 Julien Y. Dutheil
 @end copying
 
 @titlepage
@@ -50,10 +50,6 @@ Introduction
 
 * Description::
 * Run::
-
-Output files
-
-* bppphysamp::
 
 @end detailmenu
 @end menu
@@ -227,10 +223,6 @@ The sampled alignment is written using the standard options in the BppO syntax (
 Optionally, the sampled tree can also be written using options from the BppO syntax (@ref{WritingTrees, , , bppsuite, @uref{http://biopp.univ-montp2.fr/manual/html/bppsuite/2.2.0/WritingTrees.html#WritingTrees}}).
 
 @c ------------------------------------------------------------------------------------------------------------------
-
-@menu
-* bppphysamp::
-@end menu
 
 @node bppphysamp,  , bppalnoptim, Top
 @chapter Sampling alignment to remove redundant sequences
