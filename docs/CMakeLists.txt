@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Julien Y. Dutheil <dutheil@evolbio.mpg.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # CMake script for the physamp package
 # Author: Julien Dutheil
 # Created: 24/10/2014

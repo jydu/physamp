@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: Julien Y. Dutheil
+# SPDX-FileCopyrightText: 2026 Julien Y. Dutheil <dutheil@evolbio.mpg.de>
 #
-# SPDX-License-Identifier: CECILL-2.1
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 add_executable(bppalnoptim AlignmentOptimizer.cpp)
 add_executable(bppphysamp PhyloSampler.cpp)

@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 Julien Y. Dutheil <dutheil@evolbio.mpg.de>
+
+SPDX-License-Identifier: GPL-3.0-or-later
+-->
+
 **PhySamp** is a package dedicated to phylogenetic sampling. It samples a sequence alignment according to its corresponding phylogenetic tree. Current stable version is 0.2.0. Current development version is 1.0.0, and works with the development version of Bio++ (2.3.0).
 
 # Description

@@ -1,6 +1,6 @@
-# SPDX-FileCopyrightText: Julien Y. Dutheil
+# SPDX-FileCopyrightText: 2026 Julien Y. Dutheil <dutheil@evolbio.mpg.de>
 #
-# SPDX-License-Identifier: CECILL-2.1
+# SPDX-License-Identifier: GPL-3.0-or-later
 
 cmake_minimum_required(VERSION 3.10)
 project(physamp CXX)
@@ -99,7 +99,7 @@ else(NO_DEP_CHECK)
     endif(CMAKE_INSTALL_PREFIX)
 
     include(GNUInstallDirs)
-    find_package(bpp-phyl 3.0.0 REQUIRED)
+    find_package(bpp-phyl 13.0.0 REQUIRED)
 
     # Subdirectories
     add_subdirectory(physamp)
@@ -115,7 +115,7 @@ set(CPACK_PACKAGE_VERSION_MAJOR "1")
 set(CPACK_PACKAGE_VERSION_MINOR "2")
 set(CPACK_PACKAGE_VERSION_PATCH "0")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "The Phylogenetic Sampler package")
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSES/GPL-3.0-or-later.txt")
 set(CPACK_RESOURCE_FILE_AUTHORS "${CMAKE_SOURCE_DIR}/AUTHORS")
 set(CPACK_RESOURCE_FILE_INSTALL "${CMAKE_SOURCE_DIR}/INSTALL")
 set(CPACK_SOURCE_GENERATOR "TGZ")

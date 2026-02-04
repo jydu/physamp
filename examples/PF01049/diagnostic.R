@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Julien Y. Dutheil <dutheil@evolbio.mpg.de>
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # Created on 09/10/14 by jdutheil
 library(RColorBrewer)
 cols<-brewer.pal(6, name="Accent")
